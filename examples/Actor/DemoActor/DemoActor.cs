@@ -52,7 +52,9 @@ namespace DaprDemoActor
         public Task<MyData> GetData()
         {
             // Get state using StateManager.
-            return this.StateManager.GetStateAsync<MyData>(StateName);
+            //return this.StateManager.GetStateAsync<MyData>(StateName);
+
+            return Task.FromResult(new MyData("this and", "that"));
         }
 
         public Task TestThrowException()
@@ -99,7 +101,7 @@ namespace DaprDemoActor
         {
             // This method is invoked when an actor reminder is fired.
             var actorState = await this.StateManager.GetStateAsync<MyData>(StateName);
-            actorState.PropertyB = $"Reminder triggered at '{DateTime.Now:yyyy-MM-ddTHH:mm:ss}'";
+            actorState = actorState with {PropertyB = $"Reminder triggered at '{DateTime.Now:yyyy-MM-ddTHH:mm:ss}'"};
             await this.StateManager.SetStateAsync<MyData>(StateName, actorState);
         }
 
@@ -163,7 +165,7 @@ namespace DaprDemoActor
         public async Task TimerCallback(byte[] data)
         {
             var state = await this.StateManager.GetStateAsync<MyData>(StateName);
-            state.PropertyA = $"Timer triggered at '{DateTime.Now:yyyyy-MM-ddTHH:mm:s}'";
+            state = state with {PropertyA = $"Timer triggered '{DateTime.Now:yyyyy-MM-ddTHH:mm:s}'"};
             await this.StateManager.SetStateAsync<MyData>(StateName, state);
             var timerParams = JsonSerializer.Deserialize<TimerParams>(data);
             Console.WriteLine("Timer parameter1: " + timerParams.IntParam);
@@ -172,30 +174,22 @@ namespace DaprDemoActor
 
         public async Task<AccountBalance> GetAccountBalance()
         {
-            var starting = new AccountBalance()
-            {
-                AccountId = this.Id.GetId(),
-                Balance = 100m, // Start new accounts with 100, we're pretty generous.
-            };
-
+            var starting = new AccountBalance(this.Id.GetId(), 100m); // Start new accounts with 100, we're pretty generous.
+            
             var balance = await this.StateManager.GetOrAddStateAsync<AccountBalance>("balance", starting);
             return balance;
         }
 
         public async Task Withdraw(WithdrawRequest withdraw)
         {
-            var starting = new AccountBalance()
-            {
-                AccountId = this.Id.GetId(),
-                Balance = 100m, // Start new accounts with 100, we're pretty generous.
-            };
+            var starting = new AccountBalance(this.Id.GetId(), 100m); // Start new accounts with 100, we're pretty generous.
 
             var balance = await this.StateManager.GetOrAddStateAsync<AccountBalance>("balance", starting);
 
             // Throws Overdraft exception if the account doesn't have enough money.
             var updated = this.bank.Withdraw(balance.Balance, withdraw.Amount);
 
-            balance.Balance = updated;
+            balance = balance with {Balance = updated};
             await this.StateManager.SetStateAsync("balance", balance);
         }
     }

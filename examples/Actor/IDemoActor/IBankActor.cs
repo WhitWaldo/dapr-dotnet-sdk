@@ -24,17 +24,9 @@ namespace IDemoActorInterface
         Task Withdraw(WithdrawRequest withdraw);
     }
 
-    public class AccountBalance
-    {
-        public string AccountId { get; set; }
+    public record AccountBalance(string AccountId, decimal Balance);
 
-        public decimal Balance { get; set; }
-    }
-
-    public class WithdrawRequest
-    {
-        public decimal Amount { get; set; }
-    }
+    public record WithdrawRequest(decimal Amount);
 
     public class OverdraftException : Exception
     {
