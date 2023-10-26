@@ -704,6 +704,22 @@ namespace Dapr.Client
         public abstract Task<TValue> GetStateAsync<TValue>(string storeName, string key, ConsistencyMode? consistencyMode = default, IReadOnlyDictionary<string, string> metadata = default, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Attempts to get the the current value associated with the <paramref name="key"/> from the Dapr state store.
+        /// </summary>
+        /// <param name="storeName">The name of state store to read from.</param>
+        /// <param name="key">The state key.</param>
+        /// <param name="consistencyMode">The consistency mode <see cref="ConsistencyMode" />.</param>
+        /// <param name="metadata">A collection of metadata key-value pairs that will be provided to the state store. The valid metadata keys and values are determined by the type of state store used.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken" /> that can be used to cancel the operation.</param>
+        /// <typeparam name="TValue">The data type of the value to read.</typeparam>
+        /// <returns>
+        /// A task that represents the asynchronous get operation. The value of TResult parameter contains
+        /// <see cref="ConditionalValue{TValue}"/> indicating whether the state is present and the value of
+        /// the state if it is present.
+        /// </returns>
+        public abstract Task<ConditionalValue<TValue>> TryGetStateAsync<TValue>(string storeName, string key, ConsistencyMode? consistencyMode = default, IReadOnlyDictionary<string, string> metadata = default, CancellationToken cancellationToken = default);
+        
+        /// <summary>
         /// Gets a list of values associated with the <paramref name="keys" /> from the Dapr state store.
         /// </summary>
         /// <param name="storeName">The name of state store to read from.</param>
@@ -732,6 +748,22 @@ namespace Dapr.Client
         /// <returns>A <see cref="Task" /> that will complete when the operation has completed.</returns>
         public abstract Task DeleteBulkStateAsync(string storeName, IReadOnlyList<BulkDeleteStateItem> items, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Attempts to get the current value associated with the <paramref name="key"/> from the Dapr state store and an ETag.
+        /// </summary>
+        /// <param name="storeName">The name of the state store.</param>
+        /// <param name="key">The state key.</param>
+        /// <param name="consistencyMode">The consistency mode <see cref="ConsistencyMode" />.</param>
+        /// <param name="metadata">A collection of metadata key-value pairs that will be provided to the state store. The valid metadata keys and values are determined by the type of state store used.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken" /> that can be used to cancel the operation.</param>
+        /// <typeparam name="TValue">The data type of the value to read.</typeparam>
+        /// <returns>
+        /// A task that represents the asynchronous get operation. The value of TResult parameter contains
+        /// <see cref="ConditionalValue{TValue}"/> indicating whether the state is present and the value
+        /// of the state if it is present.
+        /// </returns>
+        public abstract Task<(ConditionalValue<TValue> value, string etag)> TryGetStateAndETagAsync<TValue>(string storeName, string key, ConsistencyMode? consistencyMode = default, IReadOnlyDictionary<string, string> metadata = default, CancellationToken cancellationToken = default);
+        
         /// <summary>
         /// Gets the current value associated with the <paramref name="key" /> from the Dapr state store and an ETag.
         /// </summary>
