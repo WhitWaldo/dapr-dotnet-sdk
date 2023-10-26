@@ -18,6 +18,7 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapr.Actors.Resources;
+using Dapr.Client;
 
 namespace Dapr.Actors.Runtime
 {

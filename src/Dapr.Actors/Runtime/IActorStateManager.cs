@@ -11,6 +11,8 @@
 // limitations under the License.
 // ------------------------------------------------------------------------
 
+using Dapr.Client;
+
 namespace Dapr.Actors.Runtime
 {
     using System;
