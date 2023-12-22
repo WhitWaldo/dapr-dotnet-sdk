@@ -9,10 +9,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="C:\Users\whit_\source\repos\dapr-dotnet-sdk\properties\\IsExternalInit.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\..\..\src\Dapr.Client\Dapr.Client.csproj" />
     </ItemGroup>
 
