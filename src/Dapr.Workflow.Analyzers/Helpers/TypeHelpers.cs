@@ -52,8 +52,7 @@ internal static class TypeHelpers
         var registeredTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.IncludeNullability);
         
         //Check if the syntax node is a call to AddDaprWorkflow
-        if (syntaxNode.Expression is MemberAccessExpressionSyntax memberAccess &&
-            memberAccess.Name.Identifier.Text == "AddDaprWorkflow")
+        if (syntaxNode.Expression is MemberAccessExpressionSyntax {Name.Identifier.Text: "AddDaprWorkflow"})
         {
             //Get the lambda expression passed as the argument to AddDaprWorkflow
             var lambda = syntaxNode.ArgumentList.Arguments.FirstOrDefault()?.Expression as SimpleLambdaExpressionSyntax;

@@ -19,21 +19,10 @@ public sealed class CSharpWorkflowDependencyInjectionValidationAnalyzer : Diagno
     /// The unique diagnostic identifier for this analyzer.
     /// </summary>
 	public const string DiagnosticId = "WF0001";
-
-    private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.WF0001Title),
-        Resources.ResourceManager, typeof(Resources));
-
-    private static readonly LocalizableString MessageFormat =
-        new LocalizableResourceString(nameof(Resources.WF0001MessageFormat), Resources.ResourceManager,
-            typeof(Resources));
-
-    private static readonly LocalizableString Description =
-        new LocalizableResourceString(nameof(Resources.WF0001Description), Resources.ResourceManager,
-            typeof(Resources));
-
+    
 	private static readonly DiagnosticDescriptor CSharpWorkflowDependencyInjectionValidationRule = new(DiagnosticId,
-		Title, MessageFormat, "DependencyInjection", DiagnosticSeverity.Warning, isEnabledByDefault: true, 
-        description: Description);
+        "Missing workflow dependency injection registration", "The workflow type '{0}' is not registered with the service provider", "DependencyInjection", DiagnosticSeverity.Warning, isEnabledByDefault: true, 
+        description: "Every type that implements IWorkflow should be registered with the service provider.");
 
     /// <inheritdoc/>
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
@@ -85,10 +74,6 @@ public sealed class CSharpWorkflowDependencyInjectionValidationAnalyzer : Diagno
             registeredTypes.UnionWith(
                 TypeHelpers.IdentifyWorkflowDependencyInjectionTypeRegistrations("RegisterWorkflow", invocation, model));
         }
-        
-        //Get the compilation and the global namespace
-        var compilation = model.Compilation;
-        var globalNamespace = compilation.GlobalNamespace;
         
         //Get all the types in the compilation
         var allTypes = TypeHelpers.GetAllTypes(model.Compilation.Assembly.GlobalNamespace);

@@ -19,19 +19,10 @@ public sealed class CSharpWorkflowActivityDependencyInjectionValidationAnalyzer 
     /// The unique diagnostic identifier for this analyzer.
     /// </summary>
 	public const string DiagnosticId = "WF0002";
-
-    private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.WF0002Title),
-        Resources.ResourceManager, typeof(Resources));
-    private static readonly LocalizableString MessageFormat =
-        new LocalizableResourceString(nameof(Resources.WF0002MessageFormat), Resources.ResourceManager,
-            typeof(Resources));
-    private static readonly LocalizableString Description =
-        new LocalizableResourceString(nameof(Resources.WF0002Description), Resources.ResourceManager,
-            typeof(Resources));
-
+    
 	private static readonly DiagnosticDescriptor CSharpWorkflowActivityDependencyInjectionValidationRule =
-		new(DiagnosticId, Title, MessageFormat, "DependencyInjection",
-			DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
+		new(DiagnosticId, "Missing workflow activity dependency injection registration", "The workflow activity type '{0}' is not registered with the service provider", "DependencyInjection",
+			DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Every type that implements IWorkflowActivity should be registered with the service provider.");
 
     /// <inheritdoc/>
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
@@ -82,11 +73,7 @@ public sealed class CSharpWorkflowActivityDependencyInjectionValidationAnalyzer 
                 TypeHelpers.IdentifyWorkflowDependencyInjectionTypeRegistrations("RegisterActivity", invocation,
                     model));
         }
-
-        //Get the compilation and the global namespace
-        var compilation = model.Compilation;
-        var globalNamespace = compilation.GlobalNamespace;
-
+        
         //Get all the types in the compilation
         var allTypes = TypeHelpers.GetAllTypes(model.Compilation.Assembly.GlobalNamespace);
 
