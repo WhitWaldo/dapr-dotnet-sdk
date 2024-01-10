@@ -20,9 +20,18 @@ public sealed class CSharpWorkflowActivityDependencyInjectionValidationAnalyzer 
     /// </summary>
 	public const string DiagnosticId = "WF0002";
 
+    private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.WF0002Title),
+        Resources.ResourceManager, typeof(Resources));
+    private static readonly LocalizableString MessageFormat =
+        new LocalizableResourceString(nameof(Resources.WF0002MessageFormat), Resources.ResourceManager,
+            typeof(Resources));
+    private static readonly LocalizableString Description =
+        new LocalizableResourceString(nameof(Resources.WF0002Description), Resources.ResourceManager,
+            typeof(Resources));
+
 	private static readonly DiagnosticDescriptor CSharpWorkflowActivityDependencyInjectionValidationRule =
-		new(DiagnosticId, Resources.WF0002Title, Resources.WF0002MessageFormat, "DependencyInjection",
-			DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Resources.WF0002Description);
+		new(DiagnosticId, Title, MessageFormat, "DependencyInjection",
+			DiagnosticSeverity.Warning, isEnabledByDefault: true, description: Description);
 
     /// <inheritdoc/>
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>

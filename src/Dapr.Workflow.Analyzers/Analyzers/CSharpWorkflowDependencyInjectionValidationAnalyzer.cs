@@ -20,9 +20,20 @@ public sealed class CSharpWorkflowDependencyInjectionValidationAnalyzer : Diagno
     /// </summary>
 	public const string DiagnosticId = "WF0001";
 
+    private static readonly LocalizableString Title = new LocalizableResourceString(nameof(Resources.WF0001Title),
+        Resources.ResourceManager, typeof(Resources));
+
+    private static readonly LocalizableString MessageFormat =
+        new LocalizableResourceString(nameof(Resources.WF0001MessageFormat), Resources.ResourceManager,
+            typeof(Resources));
+
+    private static readonly LocalizableString Description =
+        new LocalizableResourceString(nameof(Resources.WF0001Description), Resources.ResourceManager,
+            typeof(Resources));
+
 	private static readonly DiagnosticDescriptor CSharpWorkflowDependencyInjectionValidationRule = new(DiagnosticId,
-		Resources.WF0001Title, Resources.WF0001MessageFormat, "DependencyInjection", DiagnosticSeverity.Warning,
-		isEnabledByDefault: true, description: Resources.WF0001Description);
+		Title, MessageFormat, "DependencyInjection", DiagnosticSeverity.Warning, isEnabledByDefault: true, 
+        description: Description);
 
     /// <inheritdoc/>
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
