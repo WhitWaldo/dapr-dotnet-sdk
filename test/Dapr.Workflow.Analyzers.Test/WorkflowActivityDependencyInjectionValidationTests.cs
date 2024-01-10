@@ -277,7 +277,7 @@ public class MyWorkflow : Workflow<string, bool> {}
 public class MyActivity : WorkflowActivity<string, object> {}
 ";
         var expected = VerifyCS.Diagnostic()
-            .WithMessage("The type 'MyActivity' is not registered with the service provider")
+            .WithMessage("The workflow activity type 'MyActivity' is not registered with the service provider")
             .WithSpan(53, 14, 53, 24)
             .WithSeverity(DiagnosticSeverity.Warning);
 
@@ -361,12 +361,12 @@ public class MyOtherActivity : WorkflowActivity<string, object> {}
 public class AnotherActivity : WorkflowActivity<bool, long> {}
 ";
         var expectedMyOtherActivity = VerifyCS.Diagnostic()
-            .WithMessage("The type 'MyOtherActivity' is not registered with the service provider")
+            .WithMessage("The workflow activity type 'MyOtherActivity' is not registered with the service provider")
             .WithSpan(55, 14, 55, 29)
             .WithSeverity(DiagnosticSeverity.Warning);
 
         var expectedAnotherActivity = VerifyCS.Diagnostic()
-            .WithMessage("The type 'AnotherActivity' is not registered with the service provider")
+            .WithMessage("The workflow activity type 'AnotherActivity' is not registered with the service provider")
             .WithSpan(56, 14, 56, 29)
             .WithSeverity(DiagnosticSeverity.Warning);
 

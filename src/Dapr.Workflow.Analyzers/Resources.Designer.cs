@@ -78,7 +78,7 @@ namespace Dapr.Workflow.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The type &apos;{0}&apos; is not registered with the service provider.
+        ///   Looks up a localized string similar to The workflow type &apos;{0}&apos; is not registered with the service provider.
         /// </summary>
         internal static string WF0001MessageFormat {
             get {
@@ -114,7 +114,7 @@ namespace Dapr.Workflow.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The type &apos;{0}&apos; is not registered with the service provider.
+        ///   Looks up a localized string similar to The workflow activity type &apos;{0}&apos; is not registered with the service provider.
         /// </summary>
         internal static string WF0002MessageFormat {
             get {

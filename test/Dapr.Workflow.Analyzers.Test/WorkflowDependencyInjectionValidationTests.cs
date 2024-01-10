@@ -187,7 +187,7 @@ public class MyWorkflow : Workflow<string, bool> {}
 
 		var expected = VerifyCS.Diagnostic()
 			.WithMessage(
-				$"The type 'MyWorkflow' is not registered with the service provider")
+				$"The workflow type 'MyWorkflow' is not registered with the service provider")
             .WithSpan(40, 14, 40, 24)
 			.WithSeverity(DiagnosticSeverity.Warning);
 
@@ -264,12 +264,12 @@ public class MyOtherWorkflow : Workflow<string, bool> {};
 
         var expectMyWorkflow = VerifyCS.Diagnostic()
             .WithMessage(
-                $"The type 'MyWorkflow' is not registered with the service provider")
+                $"The workflow type 'MyWorkflow' is not registered with the service provider")
             .WithSpan(40, 14, 40, 24)
             .WithSeverity(DiagnosticSeverity.Warning);
 
         var expectMyOtherWorkflow = VerifyCS.Diagnostic()
-            .WithMessage($"The type 'MyOtherWorkflow' is not registered with the service provider")
+            .WithMessage($"The workflow type 'MyOtherWorkflow' is not registered with the service provider")
             .WithSpan(42, 14, 42, 29)
             .WithSeverity(DiagnosticSeverity.Warning);
 
@@ -345,7 +345,7 @@ public class MyUnregisteredWorkflow : Workflow<string, bool> {};
 
         var expected = VerifyCS.Diagnostic()
             .WithMessage(
-                $"The type 'MyUnregisteredWorkflow' is not registered with the service provider")
+                $"The workflow type 'MyUnregisteredWorkflow' is not registered with the service provider")
             .WithSpan(45, 14, 45, 36)
             .WithSeverity(DiagnosticSeverity.Warning);
 
