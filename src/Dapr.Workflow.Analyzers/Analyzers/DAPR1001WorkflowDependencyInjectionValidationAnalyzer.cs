@@ -13,12 +13,12 @@ namespace Dapr.Workflow.Analyzers;
 /// also registered in the `AddDaprWorkflow` method during dependency injection registration.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class CSharpWorkflowDependencyInjectionValidationAnalyzer : DiagnosticAnalyzer
+public sealed class DAPR1001WorkflowDependencyInjectionValidationAnalyzer : DiagnosticAnalyzer
 {
     /// <summary>
     /// The unique diagnostic identifier for this analyzer.
     /// </summary>
-	public const string DiagnosticId = "WF0001";
+	public const string DiagnosticId = "DAPR1001";
     
 	private static readonly DiagnosticDescriptor CSharpWorkflowDependencyInjectionValidationRule = new(DiagnosticId,
         "Missing workflow dependency injection registration", "The workflow type '{0}' is not registered with the service provider", "DependencyInjection", DiagnosticSeverity.Warning, isEnabledByDefault: true, 

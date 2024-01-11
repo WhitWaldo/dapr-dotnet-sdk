@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Dapr.Workflow.Analyzers.Test;
 using VerifyCS =
     Tests.MsTest.Verifiers.CSharpAnalyzerVerifier<
-        Analyzers.CSharpWorkflowDependencyInjectionValidationAnalyzer>;
+        Analyzers.DAPR1001WorkflowDependencyInjectionValidationAnalyzer>;
 
 [TestClass]
 public class WorkflowDependencyInjectionValidationTests

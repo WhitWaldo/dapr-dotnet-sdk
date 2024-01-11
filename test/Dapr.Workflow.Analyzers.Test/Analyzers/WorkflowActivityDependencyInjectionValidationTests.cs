@@ -7,7 +7,7 @@ namespace Dapr.Workflow.Analyzers.Test;
 
 using VerifyCS =
     Tests.MsTest.Verifiers.CSharpAnalyzerVerifier<
-        Analyzers.CSharpWorkflowActivityDependencyInjectionValidationAnalyzer>;
+        Analyzers.DAPR1002WorkflowActivityDependencyInjectionValidationAnalyzer>;
 
 [TestClass]
 public class WorkflowActivityDependencyInjectionValidationTests
