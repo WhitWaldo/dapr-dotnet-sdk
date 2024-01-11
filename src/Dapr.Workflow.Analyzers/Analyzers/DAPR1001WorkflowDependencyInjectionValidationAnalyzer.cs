@@ -16,20 +16,20 @@ namespace Dapr.Workflow.Analyzers;
 public sealed class DAPR1001WorkflowDependencyInjectionValidationAnalyzer : DiagnosticAnalyzer
 {
     /// <summary>
-    /// The unique diagnostic identifier for this analyzer.
+    /// The ID for diagnostics used by the <see cref="DAPR1001WorkflowDependencyInjectionValidationAnalyzer"/> analyzer.
     /// </summary>
 	public const string DiagnosticId = "DAPR1001";
 
     private const string HelpLink =
         "https://github.com/dapr/dotnet-sdk/Dapr.Workflow.Analyzers/blob/master/Documentation/DAPR1001.md";
 
-	private static readonly DiagnosticDescriptor CSharpWorkflowDependencyInjectionValidationRule = new(DiagnosticId,
+	private static readonly DiagnosticDescriptor Descriptor = new(DiagnosticId,
         "Missing workflow dependency injection registration", "The workflow type '{0}' is not registered with the service provider", "DependencyInjection", DiagnosticSeverity.Warning, isEnabledByDefault: true, 
         description: "Every type that implements IWorkflow should be registered with the service provider.", helpLinkUri: HelpLink);
 
     /// <inheritdoc/>
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-		ImmutableArray.Create(CSharpWorkflowDependencyInjectionValidationRule);
+		ImmutableArray.Create(Descriptor);
 
     /// <inheritdoc/>
 	public override void Initialize(AnalysisContext context)
@@ -95,7 +95,7 @@ public sealed class DAPR1001WorkflowDependencyInjectionValidationAnalyzer : Diag
             if (registeredTypes.Contains(type)) continue;
 
             //Report a diagnostic
-            var diagnostic = Diagnostic.Create(CSharpWorkflowDependencyInjectionValidationRule,
+            var diagnostic = Diagnostic.Create(Descriptor,
                 type.Locations[0], type.Name);
             context.ReportDiagnostic(diagnostic);
         }

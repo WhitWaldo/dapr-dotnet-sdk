@@ -77,6 +77,7 @@ internal static class TypeHelpers
                             //If the generic name syntax is not null, get the first type argument
                             var typeArgument = genericName?.TypeArgumentList.Arguments.FirstOrDefault();
 
+                            //If there isn't one, we're not interested in this method
                             if (typeArgument != null)
                             {
                                 var typeSymbol = model.GetTypeInfo(typeArgument).Type;

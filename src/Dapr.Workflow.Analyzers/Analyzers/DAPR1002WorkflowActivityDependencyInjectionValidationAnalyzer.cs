@@ -16,20 +16,20 @@ namespace Dapr.Workflow.Analyzers;
 public sealed class DAPR1002WorkflowActivityDependencyInjectionValidationAnalyzer : DiagnosticAnalyzer
 {
     /// <summary>
-    /// The unique diagnostic identifier for this analyzer.
+    /// The ID for diagnostics produced by the <see cref="DAPR1002WorkflowActivityDependencyInjectionValidationAnalyzer"/> analyzer.
     /// </summary>
 	public const string DiagnosticId = "DAPR1002";
 
     private const string HelpLink =
         "https://github.com/dapr/dotnet-sdk/Dapr.Workflow.Analyzers/blob/master/Documentation/DAPR1002.md";
 
-    private static readonly DiagnosticDescriptor CSharpWorkflowActivityDependencyInjectionValidationRule =
+    private static readonly DiagnosticDescriptor Descriptor =
 		new(DiagnosticId, "Missing workflow activity dependency injection registration", "The workflow activity type '{0}' is not registered with the service provider", "DependencyInjection",
 			DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Every type that implements IWorkflowActivity should be registered with the service provider.", helpLinkUri: HelpLink);
 
     /// <inheritdoc/>
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-		ImmutableArray.Create(CSharpWorkflowActivityDependencyInjectionValidationRule);
+		ImmutableArray.Create(Descriptor);
 
     /// <inheritdoc/>
 	public override void Initialize(AnalysisContext context)
@@ -86,7 +86,7 @@ public sealed class DAPR1002WorkflowActivityDependencyInjectionValidationAnalyze
         {
             //Skip abstract classes
             if (type.IsAbstract) continue;
-
+            
             //Check if the type implements the workflow type (e.g. IWorkflow or IWorkflowActivity)
             if (!TypeHelpers.Implements(type, workflowType)) continue;
 
@@ -94,7 +94,7 @@ public sealed class DAPR1002WorkflowActivityDependencyInjectionValidationAnalyze
             if (registeredTypes.Contains(type)) continue;
 
             //Report a diagnostic
-            var diagnostic = Diagnostic.Create(CSharpWorkflowActivityDependencyInjectionValidationRule,
+            var diagnostic = Diagnostic.Create(Descriptor,
                 type.Locations[0], type.Name);
             context.ReportDiagnostic(diagnostic);
         }
