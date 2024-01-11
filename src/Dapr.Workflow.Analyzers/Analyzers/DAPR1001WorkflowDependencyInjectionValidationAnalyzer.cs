@@ -19,10 +19,13 @@ public sealed class DAPR1001WorkflowDependencyInjectionValidationAnalyzer : Diag
     /// The unique diagnostic identifier for this analyzer.
     /// </summary>
 	public const string DiagnosticId = "DAPR1001";
-    
+
+    private const string HelpLink =
+        "https://github.com/dapr/dotnet-sdk/Dapr.Workflow.Analyzers/blob/master/Documentation/DAPR1001.md";
+
 	private static readonly DiagnosticDescriptor CSharpWorkflowDependencyInjectionValidationRule = new(DiagnosticId,
         "Missing workflow dependency injection registration", "The workflow type '{0}' is not registered with the service provider", "DependencyInjection", DiagnosticSeverity.Warning, isEnabledByDefault: true, 
-        description: "Every type that implements IWorkflow should be registered with the service provider.");
+        description: "Every type that implements IWorkflow should be registered with the service provider.", helpLinkUri: HelpLink);
 
     /// <inheritdoc/>
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>

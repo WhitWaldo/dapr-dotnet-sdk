@@ -19,10 +19,13 @@ public sealed class DAPR1002WorkflowActivityDependencyInjectionValidationAnalyze
     /// The unique diagnostic identifier for this analyzer.
     /// </summary>
 	public const string DiagnosticId = "DAPR1002";
-    
-	private static readonly DiagnosticDescriptor CSharpWorkflowActivityDependencyInjectionValidationRule =
+
+    private const string HelpLink =
+        "https://github.com/dapr/dotnet-sdk/Dapr.Workflow.Analyzers/blob/master/Documentation/DAPR1002.md";
+
+    private static readonly DiagnosticDescriptor CSharpWorkflowActivityDependencyInjectionValidationRule =
 		new(DiagnosticId, "Missing workflow activity dependency injection registration", "The workflow activity type '{0}' is not registered with the service provider", "DependencyInjection",
-			DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Every type that implements IWorkflowActivity should be registered with the service provider.");
+			DiagnosticSeverity.Warning, isEnabledByDefault: true, description: "Every type that implements IWorkflowActivity should be registered with the service provider.", helpLinkUri: HelpLink);
 
     /// <inheritdoc/>
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
