@@ -1,12 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\Dapr.Workflow\Dapr.Workflow.csproj" />
-
-        <ProjectReference Include="..\..\..\src\Dapr.Workflow.Analyzers\Dapr.Workflow.Analyzers.csproj" >
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-            <OutputItemType>Analyzer</OutputItemType>
-        </ProjectReference>
+        <ProjectReference Include="..\..\..\src\Dapr.Workflow.Analyzers\Dapr.Workflow.Analyzers.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer"/>
+        <ProjectReference Include="..\..\..\src\Dapr.Workflow\Dapr.Workflow.csproj"/>
     </ItemGroup>
 
     <PropertyGroup>

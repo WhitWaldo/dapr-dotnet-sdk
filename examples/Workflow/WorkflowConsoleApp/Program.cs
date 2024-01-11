@@ -15,7 +15,8 @@ var builder = Host.CreateDefaultBuilder(args).ConfigureServices(services =>
     {
         // Note that it's also possible to register a lambda function as the workflow
         // or activity implementation instead of a class.
-        
+        options.RegisterWorkflow<OrderProcessingWorkflow>();
+
         // These are the activities that get invoked by the workflow(s).
         options.RegisterActivity<ReserveInventoryActivity>();
         options.RegisterActivity<RequestApprovalActivity>();
