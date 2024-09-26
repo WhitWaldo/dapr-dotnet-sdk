@@ -14,6 +14,8 @@
 using System.Threading.Channels;
 using Dapr.AppCallback.Autogen.Grpc.v1;
 using Grpc.Core;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using P = Dapr.Client.Autogen.Grpc.v1;
 
 namespace Dapr.Messaging.PublishSubscribe;
@@ -66,6 +68,14 @@ public sealed class PublishSubscribeReceiver : IAsyncDisposable
     /// </summary>
     private readonly P.Dapr.DaprClient client;
     /// <summary>
+    /// Used for compression and serialization operations.
+    /// </summary>
+    private readonly EncodingHandler encodingHandler;
+    /// <summary>
+    /// Used for logging.
+    /// </summary>
+    private readonly ILogger logger;
+    /// <summary>
     /// Flag that prevents the developer from accidentally initializing the subscription more than once from the same receiver.
     /// </summary>
     private bool hasInitialized;
@@ -82,13 +92,17 @@ public sealed class PublishSubscribeReceiver : IAsyncDisposable
     /// <param name="options">Options allowing the behavior of the receiver to be configured.</param>
     /// <param name="handler">The delegate reflecting the action to take upon messages received by the subscription.</param>
     /// <param name="client">A reference to the DaprClient instance.</param>
-    internal PublishSubscribeReceiver(string pubSubName, string topicName, DaprSubscriptionOptions options, TopicMessageHandler handler, P.Dapr.DaprClient client)
+    /// <param name="loggerFactory">Used for creating a logger instance.</param>
+    /// <param name="encodingHandler">The instance responsible for deserialization and decompression operations.</param>
+    internal PublishSubscribeReceiver(string pubSubName, string topicName, DaprSubscriptionOptions options, TopicMessageHandler handler, P.Dapr.DaprClient client, ILoggerFactory? loggerFactory, EncodingHandler encodingHandler)
     {
         this.client = client;
         this.pubSubName = pubSubName;
         this.topicName = topicName;
         this.options = options;
         this.messageHandler = handler;
+        this.logger = loggerFactory?.CreateLogger<PublishSubscribeReceiver>() ?? NullLoggerFactory.Instance.CreateLogger<PublishSubscribeReceiver>();
+        this.encodingHandler = encodingHandler;
         topicMessagesChannel = options.MaximumQueuedMessages is > 0
             ? Channel.CreateBounded<TopicMessage>(new BoundedChannelOptions((int)options.MaximumQueuedMessages)
             {
@@ -199,6 +213,9 @@ public sealed class PublishSubscribeReceiver : IAsyncDisposable
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(options.MessageHandlingPolicy.TimeoutDuration);
 
+            //TODO: Determine if the message needs to be deserialized in some manner before sending to the message handler
+            //encodingHandler.DeserializeAsync<>()
+
             //Evaluate the message and return an acknowledgement result
             var messageAction = await messageHandler(message, cts.Token);
 
@@ -277,6 +294,8 @@ public sealed class PublishSubscribeReceiver : IAsyncDisposable
             return;
         isDisposed = true;
 
+        logger.LogInformation("Disposing instance - waiting up to {maxTimeout} seconds for acknowledgements to drain", options.MaximumCleanupTimeout.TotalSeconds);
+
         //Stop processing new events - we'll leave any messages yet unseen as unprocessed and
         //Dapr will handle as necessary when they're not acknowledged
         topicMessagesChannel.Writer.Complete();
@@ -293,6 +312,8 @@ public sealed class PublishSubscribeReceiver : IAsyncDisposable
         {
             //Handled
         }
+
+        logger.LogInformation("Completed drain and disposal of PublishSubscribeReceiver instance");
     }
 
     /// <summary>

@@ -11,8 +11,14 @@
 // limitations under the License.
 // ------------------------------------------------------------------------
 
+using System.Reflection;
+using Dapr.Common;
+using Dapr.Common.PayloadHandlers.Compression;
+using Dapr.Common.PayloadHandlers.Serialization;
+using Grpc.Net.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Dapr.Messaging.PublishSubscribe.Extensions;
 
@@ -25,45 +31,84 @@ public static class PublishSubscribeServiceCollectionExtensions
     /// Adds Dapr Publish/Subscribe support to the service collection.
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/>.</param>
+    /// <param name="options">Various options to override configuration values with.</param>
     /// <returns></returns>
-    public static IServiceCollection AddDaprPubSubClient(this IServiceCollection services) =>
-        AddDaprPubSubClient(services, (_, _) => { });
+    public static IServiceCollection AddDaprPubSubClient(this IServiceCollection services, DaprPubSubClientOptions? options = null) => AddDaprPubSubClient(services, options, null);
 
     /// <summary>
     /// Adds Dapr Publish/Subscribe support to the service collection.
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/>.</param>
-    /// <param name="configure">Optionally allows greater configuration of the <see cref="DaprPublishSubscribeClientBuilder"/>.</param>
-    /// <returns></returns>
-    public static IServiceCollection AddDaprPubSubClient(this IServiceCollection services,
-        Action<DaprPublishSubscribeClientBuilder>? configure) =>
-        services.AddDaprPubSubClient((_, builder) => configure?.Invoke(builder));
-
-    /// <summary>
-    /// Adds Dapr Publish/Subscribe support to the service collection.
-    /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection"/>.</param>
+    /// <param name="options">Various options to override configuration values with.</param>
     /// <param name="configure">Optionally allows greater configuration of the <see cref="DaprPublishSubscribeClient"/> using injected services.</param>
     /// <returns></returns>
-    public static IServiceCollection AddDaprPubSubClient(this IServiceCollection services, Action<IServiceProvider, DaprPublishSubscribeClientBuilder>? configure)
+    public static IServiceCollection AddDaprPubSubClient(this IServiceCollection services, DaprPubSubClientOptions? options, Action<IServiceProvider>? configure)
     {
         ArgumentNullException.ThrowIfNull(services, nameof(services));
+
+        services.AddSingleton<DaprConfigurationBuilder>();
+
+        //Register each of the serialization and compression providers, if any
+        if (options is not null)
+        {
+            foreach (var serializationProvider in options.SerializationProviders) 
+                services.TryAddSingleton<ISerializationProvider>(_ => serializationProvider);
+
+            foreach (var compressionProvider in options.CompressionProviders) 
+                services.TryAddSingleton<ICompressionProvider>(_ => compressionProvider);
+        }
 
         //Register the IHttpClientFactory implementation
         services.AddHttpClient();
 
+        services.TryAddScoped<EncodingHandler>();
+        
         services.TryAddSingleton(serviceProvider =>
         {
-            var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+            configure?.Invoke(serviceProvider);
 
-            var builder = new DaprPublishSubscribeClientBuilder();
-            builder.UseHttpClientFactory(httpClientFactory);
+            var configurationBuilder = serviceProvider.GetRequiredService<DaprConfigurationBuilder>();
+            var loggerFactory = serviceProvider.GetService<ILoggerFactory?>();
+            var grpcEndpoint = configurationBuilder.GetGrpcEndpoint(options?.GrpcEndpoint);
 
-            configure?.Invoke(serviceProvider, builder);
+            //Provision and set up the HttpClient
+            var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
+            var httpClient = httpClientFactory is not null ? httpClientFactory.CreateClient() : new HttpClient();
+            // HTTP Client timeout
+            if (options?.RequestTimeout is not null && options.RequestTimeout > TimeSpan.Zero)
+                httpClient.Timeout = (TimeSpan)options.RequestTimeout;
+            //Dapr API token
+            if (!string.IsNullOrWhiteSpace(options?.DapiApiToken) || !string.IsNullOrWhiteSpace(configurationBuilder.GetApiToken(options.DapiApiToken)))
+                httpClient.DefaultRequestHeaders.Add("dapr-api-token", options.DapiApiToken);
+            //User Agent
+            httpClient.DefaultRequestHeaders.Add("dapr-sdk-dotnet", GetUserAgent());
 
-            return builder.Build();
+            var channel = GrpcChannel.ForAddress(grpcEndpoint, options.GrpcChannelOptions ?? new GrpcChannelOptions
+            {
+                ThrowOperationCanceledOnCancellation = true,
+                HttpClient = httpClient,
+                LoggerFactory = loggerFactory
+            });
+
+            return new Client.Autogen.Grpc.v1.Dapr.DaprClient(channel);
         });
 
+        services.TryAddSingleton<DaprPublishSubscribeClient, DaprPublishSubscribeGrpcClient>();
+
         return services;
+    }
+
+    /// <summary>
+    /// Gets the user-agent header value.
+    /// </summary>
+    private static string GetUserAgent()
+    {
+        var assembly = typeof(DaprPublishSubscribeClient).Assembly;
+        var assemblyVersion = assembly
+            .GetCustomAttributes<AssemblyInformationalVersionAttribute>()
+            .FirstOrDefault()?
+            .InformationalVersion;
+
+        return $"v{assemblyVersion}";
     }
 }

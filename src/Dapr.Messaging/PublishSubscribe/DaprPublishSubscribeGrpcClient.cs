@@ -11,6 +11,8 @@
 // limitations under the License.
 // ------------------------------------------------------------------------
 
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using P = Dapr.Client.Autogen.Grpc.v1.Dapr;
 
 namespace Dapr.Messaging.PublishSubscribe;
@@ -21,13 +23,20 @@ namespace Dapr.Messaging.PublishSubscribe;
 internal sealed class DaprPublishSubscribeGrpcClient : DaprPublishSubscribeClient
 {
     private readonly P.DaprClient daprClient;
+    private readonly ILoggerFactory? loggerFactory;
+    private readonly ILogger logger;
+    private readonly EncodingHandler encodingHandler;
 
     /// <summary>
     /// Creates a new instance of a <see cref="DaprPublishSubscribeGrpcClient"/>
     /// </summary>
-    public DaprPublishSubscribeGrpcClient(P.DaprClient client)
+    public DaprPublishSubscribeGrpcClient(P.DaprClient daprClient, ILoggerFactory? loggerFactory, EncodingHandler encodingHandler)
     {
-        daprClient = client;
+        this.daprClient = daprClient;
+        this.loggerFactory = loggerFactory;
+        this.logger = loggerFactory?.CreateLogger<DaprPublishSubscribeGrpcClient>() ??
+                      NullLoggerFactory.Instance.CreateLogger<DaprPublishSubscribeGrpcClient>();
+        this.encodingHandler = encodingHandler;
     }
 
     /// <summary>
@@ -41,8 +50,11 @@ internal sealed class DaprPublishSubscribeGrpcClient : DaprPublishSubscribeClien
     /// <returns></returns>
     public override async Task<IAsyncDisposable> SubscribeAsync(string pubSubName, string topicName, DaprSubscriptionOptions options, TopicMessageHandler messageHandler, CancellationToken cancellationToken)
     {
-        var receiver = new PublishSubscribeReceiver(pubSubName, topicName, options, messageHandler, daprClient);
+        logger.LogInformation("Creating new publish/subscribe receiver for component {componentName} for topic {topicName}", pubSubName, topicName);
+        var receiver = new PublishSubscribeReceiver(pubSubName, topicName, options, messageHandler, daprClient, loggerFactory, encodingHandler);
         await receiver.SubscribeAsync(cancellationToken);
+        logger.LogInformation("Created and subscribed to new publish/subscribe receiver for component {componentName} for topic {topicName}", pubSubName, topicName);
         return receiver;
     }
 }
+

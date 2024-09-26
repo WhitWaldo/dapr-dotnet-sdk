@@ -1,8 +1,20 @@
-﻿using System.Text;
+﻿using System.IO.Compression;
+using System.Text;
+using Dapr.Common.PayloadHandlers.Compression;
+using Dapr.Common.PayloadHandlers.Serialization;
 using Dapr.Messaging.PublishSubscribe;
+using Dapr.Messaging.PublishSubscribe.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 
-var daprMessagingClientBuilder = new DaprPublishSubscribeClientBuilder();
-var daprMessagingClient = daprMessagingClientBuilder.Build();
+var serviceProvider = new ServiceCollection()
+    .AddDaprPubSubClient(new DaprPubSubClientOptions
+    {
+        CompressionProviders = new List<ICompressionProvider> { new GzipCompressionProvider(CompressionLevel.SmallestSize) },
+        SerializationProviders = new List<ISerializationProvider> { new JsonSerializer() }
+    })
+    .BuildServiceProvider();
+
+var messagingClient = serviceProvider.GetRequiredService<DaprPublishSubscribeClient>();
 
 //Processor for each of the messages returned from the subscription
 async Task<TopicResponseAction> HandleMessage(TopicMessage message, CancellationToken cancellationToken = default)
@@ -21,7 +33,7 @@ async Task<TopicResponseAction> HandleMessage(TopicMessage message, Cancellation
 
 //Create a dynamic streaming subscription and subscribe with a timeout of 20 seconds
 var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-var subscription = await daprMessagingClient.SubscribeAsync("pubsub", "myTopic",
+var subscription = await messagingClient.SubscribeAsync("pubsub", "myTopic",
     new DaprSubscriptionOptions(new MessageHandlingPolicy(TimeSpan.FromSeconds(10), TopicResponseAction.Retry)),
     HandleMessage, cancellationTokenSource.Token);
 
