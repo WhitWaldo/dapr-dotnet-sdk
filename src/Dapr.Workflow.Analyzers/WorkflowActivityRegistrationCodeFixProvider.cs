@@ -27,7 +27,7 @@ namespace Dapr.Workflow.Analyzers;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(WorkflowActivityRegistrationCodeFixProvider))]
 [Shared]
-public class WorkflowActivityRegistrationCodeFixProvider : CodeFixProvider
+public sealed class WorkflowActivityRegistrationCodeFixProvider : CodeFixProvider
 {
     /// <summary>
     /// Gets the diagnostic IDs that this provider can fix.
@@ -39,7 +39,7 @@ public class WorkflowActivityRegistrationCodeFixProvider : CodeFixProvider
     /// </summary>
     public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        var title = "Register workflow activity";
+        const string title = "Register workflow activity";
         context.RegisterCodeFix(
             CodeAction.Create(
                 title,

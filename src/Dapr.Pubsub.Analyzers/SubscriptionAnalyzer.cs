@@ -23,7 +23,7 @@ namespace Dapr.Pubsub.Analyzers;
 /// Analyzes the subscription methods to ensure proper usage of MapSubscribeHandler.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public class SubscriptionAnalyzer : DiagnosticAnalyzer
+public sealed class SubscriptionAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor DiagnosticDescriptorMapSubscribeHandler = new(
         "DAPR2001",
