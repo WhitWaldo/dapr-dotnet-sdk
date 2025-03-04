@@ -23,7 +23,7 @@ namespace Dapr.Workflow.Analyzers;
 /// Analyzes whether or not workflow activities are registered.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public class WorkflowRegistrationAnalyzer : DiagnosticAnalyzer
+public sealed class WorkflowRegistrationAnalyzer : DiagnosticAnalyzer
 {
     private static readonly DiagnosticDescriptor WorkflowDiagnosticDescriptor = new(
         "DAPR1001",

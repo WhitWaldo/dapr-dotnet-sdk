@@ -99,7 +99,7 @@ public class SubscriptionAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private List<InvocationExpressionSyntax> FindInvocations(SyntaxNodeAnalysisContext context, string methodName)
+    private IReadOnlyList<InvocationExpressionSyntax> FindInvocations(SyntaxNodeAnalysisContext context, string methodName)
     {
         var invocations = new List<InvocationExpressionSyntax>();
 
@@ -114,7 +114,7 @@ public class SubscriptionAnalyzer : DiagnosticAnalyzer
         return invocations;
     }
 
-    private List<MethodDeclarationSyntax> FindMethodsWithTopicAttribute(SyntaxNodeAnalysisContext context)
+    private IReadOnlyList<MethodDeclarationSyntax> FindMethodsWithTopicAttribute(SyntaxNodeAnalysisContext context)
     {
         var methodsWithTopicAttribute = new List<MethodDeclarationSyntax>();
 

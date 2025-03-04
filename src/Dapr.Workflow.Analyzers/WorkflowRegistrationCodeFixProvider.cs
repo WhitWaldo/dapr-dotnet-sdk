@@ -27,7 +27,7 @@ namespace Dapr.Workflow.Analyzers;
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(WorkflowRegistrationCodeFixProvider))]
 [Shared]
-public class WorkflowRegistrationCodeFixProvider : CodeFixProvider
+public sealed class WorkflowRegistrationCodeFixProvider : CodeFixProvider
 {
     /// <summary>
     /// Gets the diagnostic IDs that this provider can fix.

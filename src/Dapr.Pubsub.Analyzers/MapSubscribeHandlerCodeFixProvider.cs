@@ -23,7 +23,7 @@ namespace Dapr.Pubsub.Analyzers;
 /// <summary>
 /// Provides a code fix for the DAPR2001 diagnostic.
 /// </summary>
-public class MapSubscribeHandlerCodeFixProvider : CodeFixProvider
+public sealed class MapSubscribeHandlerCodeFixProvider : CodeFixProvider
 {
     /// <summary>
     /// Gets the diagnostic IDs that this provider can fix.
