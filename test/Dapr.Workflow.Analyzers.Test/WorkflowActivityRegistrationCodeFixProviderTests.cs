@@ -85,4 +85,212 @@ public class WorkflowActivityRegistrationCodeFixProviderTests
 
         await VerifyCodeFix.RunTest<WorkflowActivityRegistrationCodeFixProvider>(code, expectedChangedCode);
     }
+
+    [Fact]
+    public async Task VerifyWorkflowActivityRegistrationCodeFix_WhenAnotherActivityIsAlreadyRegistered()
+    {
+        var code = @"
+            using Dapr.Workflow;
+            using Microsoft.Extensions.DependencyInjection;
+            using System.Threading.Tasks;
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+
+                    services.AddDaprWorkflow(options =>
+                    {
+                        options.RegisterActivity<AnotherActivity>();
+                    });
+                }
+            }
+
+            class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
+            { 
+                public override async Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
+                {
+                    await context.CallActivityAsync(nameof(NotifyActivity), new Notification(""Order received""));
+                    return new OrderResult(""Order processed"");
+                }
+            }
+
+            record OrderPayload { }
+            record OrderResult(string message) { }
+            record Notification { public Notification(string message) { } }
+            
+            class NotifyActivity : WorkflowActivity<Notification, object>
+            {
+                public override Task<object> RunAsync(WorkflowActivityContext context, Notification notification)
+                {
+                    return Task.FromResult<object>(null);
+                }
+            }
+
+            class AnotherActivity : WorkflowActivity<Notification, object>
+            {
+                public override Task<object> RunAsync(WorkflowActivityContext context, Notification notification)
+                {
+                    return Task.FromResult<object>(null);
+                }
+            }
+            ";
+
+        var expectedChangedCode = @"
+            using Dapr.Workflow;
+            using Microsoft.Extensions.DependencyInjection;
+            using System.Threading.Tasks;
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+
+                    services.AddDaprWorkflow(options =>
+                    {
+                        options.RegisterActivity<AnotherActivity>();
+                        options.RegisterActivity<NotifyActivity>();
+                    });
+                }
+            }
+
+            class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
+            { 
+                public override async Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
+                {
+                    await context.CallActivityAsync(nameof(NotifyActivity), new Notification(""Order received""));
+                    return new OrderResult(""Order processed"");
+                }
+            }
+
+            record OrderPayload { }
+            record OrderResult(string message) { }
+            record Notification { public Notification(string message) { } }
+            
+            class NotifyActivity : WorkflowActivity<Notification, object>
+            {
+                public override Task<object> RunAsync(WorkflowActivityContext context, Notification notification)
+                {
+                    return Task.FromResult<object>(null);
+                }
+            }
+
+            class AnotherActivity : WorkflowActivity<Notification, object>
+            {
+                public override Task<object> RunAsync(WorkflowActivityContext context, Notification notification)
+                {
+                    return Task.FromResult<object>(null);
+                }
+            }
+            ";
+
+        await VerifyCodeFix.RunTest<WorkflowActivityRegistrationCodeFixProvider>(code, expectedChangedCode);
+    }
+
+    [Fact]
+    public async Task VerifyWorkflowActivityRegistrationCodeFix_GivenOtherOptions()
+    {
+        var code = @"
+            using Dapr.Workflow;
+            using Microsoft.Extensions.DependencyInjection;
+            using System.Threading.Tasks;
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+
+                    services.AddDaprWorkflow(options =>
+                    {                        
+                        options.RegisterActivity<AnotherActivity>();
+                        options.RegisterWorkflow<OrderProcessingWorkflow>();
+                    });
+                }
+            }
+
+            class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
+            { 
+                public override async Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
+                {
+                    await context.CallActivityAsync(nameof(NotifyActivity), new Notification(""Order received""));
+                    return new OrderResult(""Order processed"");
+                }
+            }
+
+            record OrderPayload { }
+            record OrderResult(string message) { }
+            record Notification { public Notification(string message) { } }
+            
+            class NotifyActivity : WorkflowActivity<Notification, object>
+            {
+                public override Task<object> RunAsync(WorkflowActivityContext context, Notification notification)
+                {
+                    return Task.FromResult<object>(null);
+                }
+            }
+
+            class AnotherActivity : WorkflowActivity<Notification, object>
+            {
+                public override Task<object> RunAsync(WorkflowActivityContext context, Notification notification)
+                {
+                    return Task.FromResult<object>(null);
+                }
+            }
+            ";
+
+        var expectedChangedCode = @"
+            using Dapr.Workflow;
+            using Microsoft.Extensions.DependencyInjection;
+            using System.Threading.Tasks;
+
+            public static class Program
+            {
+                public static void Main()
+                {
+                    var services = new ServiceCollection();
+
+                    services.AddDaprWorkflow(options =>
+                    {                        
+                        options.RegisterActivity<AnotherActivity>();
+                        options.RegisterWorkflow<OrderProcessingWorkflow>();
+                        options.RegisterActivity<NotifyActivity>();
+                    });
+                }
+            }
+
+            class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
+            { 
+                public override async Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
+                {
+                    await context.CallActivityAsync(nameof(NotifyActivity), new Notification(""Order received""));
+                    return new OrderResult(""Order processed"");
+                }
+            }
+
+            record OrderPayload { }
+            record OrderResult(string message) { }
+            record Notification { public Notification(string message) { } }
+            
+            class NotifyActivity : WorkflowActivity<Notification, object>
+            {
+                public override Task<object> RunAsync(WorkflowActivityContext context, Notification notification)
+                {
+                    return Task.FromResult<object>(null);
+                }
+            }
+
+            class AnotherActivity : WorkflowActivity<Notification, object>
+            {
+                public override Task<object> RunAsync(WorkflowActivityContext context, Notification notification)
+                {
+                    return Task.FromResult<object>(null);
+                }
+            }
+            ";
+
+        await VerifyCodeFix.RunTest<WorkflowActivityRegistrationCodeFixProvider>(code, expectedChangedCode);
+    }
 }
