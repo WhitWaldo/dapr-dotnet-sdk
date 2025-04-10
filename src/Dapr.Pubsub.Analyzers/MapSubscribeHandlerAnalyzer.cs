@@ -50,33 +50,17 @@ public sealed class MapSubscribeHandlerAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(AnalyzeMapSubscribeHandler, SyntaxKind.CompilationUnit);
     }
 
-    private void AnalyzeMapSubscribeHandler(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeMapSubscribeHandler(SyntaxNodeAnalysisContext context)
     {
         var withTopicInvocations = FindInvocations(context, "WithTopic");
         var methodsWithTopicAttribute = FindMethodsWithTopicAttribute(context);
         var invocationsWithTopicAttribute = FindInvocationsWithTopicAttribute(context);
 
-        bool invokedByWebApplication = false;
         var mapSubscribeHandlerInvocation = FindInvocations(context, "MapSubscribeHandler")?.FirstOrDefault();
-
-        if (mapSubscribeHandlerInvocation?.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return;
-        }
-        
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(memberAccess.Expression);
-        if (symbolInfo.Symbol is ILocalSymbol localSymbol)
-        {
-            var type = localSymbol.Type;
-            if (type.ToDisplayString() == "Microsoft.AspNetCore.Builder.WebApplication")
-            {
-                invokedByWebApplication = true;
-            }
-        }
 
         foreach (var withTopicInvocation in withTopicInvocations)
         {
-            if (mapSubscribeHandlerInvocation != null && invokedByWebApplication)
+            if (mapSubscribeHandlerInvocation != null)
             {
                 continue;
             }
@@ -87,7 +71,7 @@ public sealed class MapSubscribeHandlerAnalyzer : DiagnosticAnalyzer
 
         foreach (var methodWithTopicAttribute in methodsWithTopicAttribute)
         {
-            if (mapSubscribeHandlerInvocation != null && invokedByWebApplication)
+            if (mapSubscribeHandlerInvocation != null)
             {
                 continue;
             }
@@ -98,7 +82,7 @@ public sealed class MapSubscribeHandlerAnalyzer : DiagnosticAnalyzer
 
         foreach (var invocationWithTopicAttribute in invocationsWithTopicAttribute)
         {
-            if (mapSubscribeHandlerInvocation != null && invokedByWebApplication)
+            if (mapSubscribeHandlerInvocation != null)
             {
                 continue;
             }
