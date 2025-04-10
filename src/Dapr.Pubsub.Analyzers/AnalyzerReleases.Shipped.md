@@ -4,4 +4,4 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|--------------------
-DAPR2001| Usage    | Warning  | Call MapSubscribeHandler
+DAPR1201| Usage    | Warning  | Call app.MapSubscribeHandler to map endpoint for Dapr PubSub subscriptions

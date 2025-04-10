@@ -23,20 +23,21 @@ namespace Dapr.Pubsub.Analyzers;
 /// Analyzes the subscription methods to ensure proper usage of MapSubscribeHandler.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class SubscriptionAnalyzer : DiagnosticAnalyzer
+public sealed class MapSubscribeHandlerAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor DiagnosticDescriptorMapSubscribeHandler = new(
-        "DAPR2001",
-        "Call MapSubscribeHandler",
-        "Call app.MapSubscribeHandler to map endpoints for Dapr subscriptions",
-        "Usage",
+    internal static readonly DiagnosticDescriptor DiagnosticDescriptorMapSubscribeHandler = new(
+        id: "DAPR1201",
+        title: new LocalizableResourceString(nameof(Resources.DAPR1201Title), Resources.ResourceManager, typeof(Resources)),
+        messageFormat: new LocalizableResourceString(nameof(Resources.DAPR102MessageFormat), Resources.ResourceManager, typeof(Resources)),
+        category: "Usage",
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
     /// <summary>
     /// Gets the supported diagnostics for this analyzer.
     /// </summary>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(DiagnosticDescriptorMapSubscribeHandler);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
+        [DiagnosticDescriptorMapSubscribeHandler];
 
     /// <summary>
     /// Initializes the analyzer.
@@ -58,48 +59,56 @@ public sealed class SubscriptionAnalyzer : DiagnosticAnalyzer
         bool invokedByWebApplication = false;
         var mapSubscribeHandlerInvocation = FindInvocations(context, "MapSubscribeHandler")?.FirstOrDefault();
 
-        if (mapSubscribeHandlerInvocation?.Expression is MemberAccessExpressionSyntax memberAccess)
+        if (mapSubscribeHandlerInvocation?.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
-            var symbolInfo = context.SemanticModel.GetSymbolInfo(memberAccess.Expression);
-            if (symbolInfo.Symbol is ILocalSymbol localSymbol)
+            return;
+        }
+        
+        var symbolInfo = context.SemanticModel.GetSymbolInfo(memberAccess.Expression);
+        if (symbolInfo.Symbol is ILocalSymbol localSymbol)
+        {
+            var type = localSymbol.Type;
+            if (type.ToDisplayString() == "Microsoft.AspNetCore.Builder.WebApplication")
             {
-                var type = localSymbol.Type;
-                if (type.ToDisplayString() == "Microsoft.AspNetCore.Builder.WebApplication")
-                {
-                    invokedByWebApplication = true;
-                }
+                invokedByWebApplication = true;
             }
         }
 
         foreach (var withTopicInvocation in withTopicInvocations)
         {
-            if (mapSubscribeHandlerInvocation == null || !invokedByWebApplication)
+            if (mapSubscribeHandlerInvocation != null && invokedByWebApplication)
             {
-                var diagnostic = Diagnostic.Create(DiagnosticDescriptorMapSubscribeHandler, withTopicInvocation.GetLocation());
-                context.ReportDiagnostic(diagnostic);
+                continue;
             }
+
+            var diagnostic = Diagnostic.Create(DiagnosticDescriptorMapSubscribeHandler, withTopicInvocation.GetLocation());
+            context.ReportDiagnostic(diagnostic);
         }
 
         foreach (var methodWithTopicAttribute in methodsWithTopicAttribute)
         {
-            if (mapSubscribeHandlerInvocation == null || !invokedByWebApplication)
+            if (mapSubscribeHandlerInvocation != null && invokedByWebApplication)
             {
-                var diagnostic = Diagnostic.Create(DiagnosticDescriptorMapSubscribeHandler, methodWithTopicAttribute.GetLocation());
-                context.ReportDiagnostic(diagnostic);
+                continue;
             }
+
+            var diagnostic = Diagnostic.Create(DiagnosticDescriptorMapSubscribeHandler, methodWithTopicAttribute.GetLocation());
+            context.ReportDiagnostic(diagnostic);
         }
 
         foreach (var invocationWithTopicAttribute in invocationsWithTopicAttribute)
         {
-            if (mapSubscribeHandlerInvocation == null || !invokedByWebApplication)
+            if (mapSubscribeHandlerInvocation != null && invokedByWebApplication)
             {
-                var diagnostic = Diagnostic.Create(DiagnosticDescriptorMapSubscribeHandler, invocationWithTopicAttribute.GetLocation());
-                context.ReportDiagnostic(diagnostic);
+                continue;
             }
+
+            var diagnostic = Diagnostic.Create(DiagnosticDescriptorMapSubscribeHandler, invocationWithTopicAttribute.GetLocation());
+            context.ReportDiagnostic(diagnostic);
         }
     }
 
-    private IReadOnlyList<InvocationExpressionSyntax> FindInvocations(SyntaxNodeAnalysisContext context, string methodName)
+    private static IReadOnlyList<InvocationExpressionSyntax> FindInvocations(SyntaxNodeAnalysisContext context, string methodName)
     {
         var invocations = new List<InvocationExpressionSyntax>();
 
@@ -114,7 +123,7 @@ public sealed class SubscriptionAnalyzer : DiagnosticAnalyzer
         return invocations;
     }
 
-    private IReadOnlyList<MethodDeclarationSyntax> FindMethodsWithTopicAttribute(SyntaxNodeAnalysisContext context)
+    private static IReadOnlyList<MethodDeclarationSyntax> FindMethodsWithTopicAttribute(SyntaxNodeAnalysisContext context)
     {
         var methodsWithTopicAttribute = new List<MethodDeclarationSyntax>();
 
@@ -131,7 +140,7 @@ public sealed class SubscriptionAnalyzer : DiagnosticAnalyzer
         return methodsWithTopicAttribute;
     }
 
-    private List<InvocationExpressionSyntax> FindInvocationsWithTopicAttribute(SyntaxNodeAnalysisContext context)
+    private static List<InvocationExpressionSyntax> FindInvocationsWithTopicAttribute(SyntaxNodeAnalysisContext context)
     {
         var invocationsWithTopicAttributeParameter = new List<InvocationExpressionSyntax>();
 

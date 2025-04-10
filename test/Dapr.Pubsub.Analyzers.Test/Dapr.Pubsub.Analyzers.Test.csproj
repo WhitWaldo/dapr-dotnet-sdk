@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dapr.AspNetCore\Dapr.AspNetCore.csproj" />
     <ProjectReference Include="..\..\src\Dapr.Pubsub.Analyzers\Dapr.Pubsub.Analyzers.csproj" />
+    <ProjectReference Include="..\Dapr.Analyzers.Common\Dapr.Analyzers.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -11,6 +11,8 @@
 // limitations under the License.
 // ------------------------------------------------------------------------
 
+using Dapr.Analyzers.Common;
+
 namespace Dapr.Pubsub.Analyzers.Test;
 
 public class MapSubscribeHandlerCodeFixProviderTests
@@ -18,68 +20,68 @@ public class MapSubscribeHandlerCodeFixProviderTests
     [Fact]
     public async Task MapSubscribeHandler()
     {
-        var code = @"
-            using Microsoft.AspNetCore.Builder;
+        const string code = """
+                                        using Microsoft.AspNetCore.Builder;
+                            
+                                        public static class Program
+                                        {
+                                            public static void Main()
+                                            {
+                                                var builder = WebApplication.CreateBuilder();
+                                                var app = builder.Build();
+                            
+                                                app.MapPost("/subscribe", () => {})
+                                                    .WithTopic("pubSubName", "topicName");
+                                            }
+                                        }         
+                            """;
 
-            public static class Program
-            {
-                public static void Main()
-                {
-                    var builder = WebApplication.CreateBuilder();
-                    var app = builder.Build();
+        const string expectedChangedCode = """
+                                                       using Microsoft.AspNetCore.Builder;
+                                           
+                                                       public static class Program
+                                                       {
+                                                           public static void Main()
+                                                           {
+                                                               var builder = WebApplication.CreateBuilder();
+                                                               var app = builder.Build();
+                                           
+                                                               app.MapSubscribeHandler();
+                                           
+                                                               app.MapPost("/subscribe", () => {})
+                                                                   .WithTopic("pubSubName", "topicName");
+                                                           }
+                                                       }         
+                                           """;
 
-                    app.MapPost(""/subscribe"", () => {})
-                        .WithTopic(""pubSubName"", ""topicName"");
-                }
-            }
-            ";
-
-        var expectedChangedCode = @"
-            using Microsoft.AspNetCore.Builder;
-
-            public static class Program
-            {
-                public static void Main()
-                {
-                    var builder = WebApplication.CreateBuilder();
-                    var app = builder.Build();
-
-                    app.MapSubscribeHandler();
-
-                    app.MapPost(""/subscribe"", () => {})
-                        .WithTopic(""pubSubName"", ""topicName"");
-                }
-            }
-            ";
-
-        await VerifyCodeFix.RunTest<MapSubscribeHandlerCodeFixProvider>(code, expectedChangedCode);
+        await VerifyCodeFix.RunTest<MapSubscribeHandlerCodeFixProvider>(code, expectedChangedCode, typeof(object).Assembly.Location, Utilities.GetReferences(), Utilities.GetAnalyzers());
     }
 
     [Fact]
     public async Task MapSubscribeHandler_TopLevelStatements()
     {
-        var code = @"
-            using Microsoft.AspNetCore.Builder;
+        const string code = """       
+                                        using Microsoft.AspNetCore.Builder;
+                            
+                                        var builder = WebApplication.CreateBuilder();
+                                        var app = builder.Build();
+                            
+                                        app.MapPost("/subscribe", () => {})
+                                            .WithTopic("pubSubName", "topicName");         
+                            """;
 
-            var builder = WebApplication.CreateBuilder();
-            var app = builder.Build();
+        const string expectedChangedCode = """                      
+                                                       using Microsoft.AspNetCore.Builder;
+                                           
+                                                       var builder = WebApplication.CreateBuilder();
+                                                       var app = builder.Build();
+                                           
+                                                       app.MapSubscribeHandler();
+                                           
+                                                       app.MapPost("/subscribe", () => {})
+                                                           .WithTopic("pubSubName", "topicName");         
+                                           """;
 
-            app.MapPost(""/subscribe"", () => {})
-                .WithTopic(""pubSubName"", ""topicName"");
-            ";
-
-        var expectedChangedCode = @"
-            using Microsoft.AspNetCore.Builder;
-
-            var builder = WebApplication.CreateBuilder();
-            var app = builder.Build();
-
-            app.MapSubscribeHandler();
-
-            app.MapPost(""/subscribe"", () => {})
-                .WithTopic(""pubSubName"", ""topicName"");
-            ";
-
-        await VerifyCodeFix.RunTest<MapSubscribeHandlerCodeFixProvider>(code, expectedChangedCode);
+        await VerifyCodeFix.RunTest<MapSubscribeHandlerCodeFixProvider>(code, expectedChangedCode, typeof(object).Assembly.Location, Utilities.GetReferences(), Utilities.GetAnalyzers());
     }
 }

@@ -28,16 +28,13 @@ public sealed class MapSubscribeHandlerCodeFixProvider : CodeFixProvider
     /// <summary>
     /// Gets the diagnostic IDs that this provider can fix.
     /// </summary>
-    public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create("DAPR2001");
+    public override ImmutableArray<string> FixableDiagnosticIds => ["DAPR2001"];
 
     /// <summary>
     /// Gets the FixAllProvider for this code fix provider.
     /// </summary>
     /// <returns>The FixAllProvider.</returns>
-    public override FixAllProvider? GetFixAllProvider()
-    {
-        return WellKnownFixAllProviders.BatchFixer;
-    }
+    public override FixAllProvider? GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
     /// <summary>
     /// Registers code fixes for the specified diagnostics.
@@ -45,7 +42,7 @@ public sealed class MapSubscribeHandlerCodeFixProvider : CodeFixProvider
     /// <param name="context">A <see cref="CodeFixContext"/> containing the context in which the code fix is being applied.</param>
     public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        var title = "Call MapSubscribeHandler";
+        const string title = "Map Dapr PubSub endpoint handler";
         context.RegisterCodeFix(
             CodeAction.Create(
                 title,
@@ -54,41 +51,63 @@ public sealed class MapSubscribeHandlerCodeFixProvider : CodeFixProvider
             context.Diagnostics);
         return Task.CompletedTask;
     }
-    
-    private async Task<Document> AddMapSubscribeHandlerAsync(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+
+    private static async Task<Document> AddMapSubscribeHandlerAsync(
+        Document document,
+        Diagnostic diagnostic,
+        CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken);
-        var invocationExpressions = root!.DescendantNodes().OfType<InvocationExpressionSyntax>();
+        var invocationExpressions = root!.DescendantNodes().OfType<InvocationExpressionSyntax>().ToList();
 
         var createBuilderInvocation = invocationExpressions
-            .FirstOrDefault(invocation =>
+            .FirstOrDefault(invocation => invocation.Expression is MemberAccessExpressionSyntax
             {
-                return invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
-                        memberAccess.Name.Identifier.Text == "CreateBuilder" &&
-                        memberAccess.Expression is IdentifierNameSyntax identifier &&
-                        identifier.Identifier.Text == "WebApplication";
+                Name.Identifier.Text: "CreateBuilder", Expression: IdentifierNameSyntax
+                {
+                    Identifier.Text: "WebApplication"
+                }
             });
 
+        if (createBuilderInvocation == null)
+        {
+            return document.WithSyntaxRoot(root);
+        }
+
         var variableDeclarator = createBuilderInvocation
-                .AncestorsAndSelf()
-                .OfType<VariableDeclaratorSyntax>()
-                .FirstOrDefault();
+            .AncestorsAndSelf()
+            .OfType<VariableDeclaratorSyntax>()
+            .FirstOrDefault();
+
+        if (variableDeclarator is null)
+        {
+            return document.WithSyntaxRoot(root);
+        }
 
         var variableName = variableDeclarator.Identifier.Text;
 
         var buildInvocation = invocationExpressions
-            .FirstOrDefault(invocation =>
-            {
-                return invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
-                        memberAccess.Name.Identifier.Text == "Build" &&
-                        memberAccess.Expression is IdentifierNameSyntax identifier &&
-                        identifier.Identifier.Text == variableName;
-            });
+            .FirstOrDefault(invocation => invocation.Expression is MemberAccessExpressionSyntax
+                                          {
+                                              Name.Identifier.Text: "Build",
+                                              Expression: IdentifierNameSyntax identifier
+                                          } &&
+                                          identifier.Identifier.Text == variableName);
+
+        if (buildInvocation is null)
+        {
+            return document.WithSyntaxRoot(root);
+        }
 
         var buildVariableDeclarator = buildInvocation
             .AncestorsAndSelf()
             .OfType<VariableDeclaratorSyntax>()
             .FirstOrDefault();
+
+        if (buildVariableDeclarator is null)
+        {
+            return document.WithSyntaxRoot(root);
+        }
 
         var buildVariableName = buildVariableDeclarator.Identifier.Text;
 
@@ -106,7 +125,8 @@ public sealed class MapSubscribeHandlerCodeFixProvider : CodeFixProvider
                 .OfType<LocalDeclarationStatementSyntax>()
                 .FirstOrDefault();
 
-            var newParentBlock = parentBlock.InsertNodesAfter(localDeclaration, new[] { mapSubscribeHandlerInvocation });
+            var newParentBlock =
+                parentBlock.InsertNodesAfter(localDeclaration, [mapSubscribeHandlerInvocation]);
             root = root.ReplaceNode(parentBlock, newParentBlock);
         }
         else
@@ -116,9 +136,10 @@ public sealed class MapSubscribeHandlerCodeFixProvider : CodeFixProvider
                 .OfType<GlobalStatementSyntax>()
                 .FirstOrDefault();
 
-            var compilationUnitSyntax = createBuilderInvocation.Ancestors().OfType<CompilationUnitSyntax>().FirstOrDefault();
+            var compilationUnitSyntax =
+                createBuilderInvocation.Ancestors().OfType<CompilationUnitSyntax>().FirstOrDefault();
             var newCompilationUnitSyntax = compilationUnitSyntax.InsertNodesAfter(buildInvocationGlobalStatement!,
-                new[] { SyntaxFactory.GlobalStatement(mapSubscribeHandlerInvocation) });
+                [SyntaxFactory.GlobalStatement(mapSubscribeHandlerInvocation)]);
             root = root.ReplaceNode(compilationUnitSyntax, newCompilationUnitSyntax);
         }
 
