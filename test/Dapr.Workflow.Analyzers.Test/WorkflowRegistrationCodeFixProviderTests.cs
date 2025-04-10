@@ -1,4 +1,4 @@
-﻿// ------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Copyright 2025 The Dapr Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,317 +11,229 @@
 // limitations under the License.
 // ------------------------------------------------------------------------
 
+using Dapr.Analyzers.Common;
+
 namespace Dapr.Workflow.Analyzers.Test;
 
-public class WorkflowRegistrationCodeFixProviderTests
+public sealed class WorkflowRegistrationCodeFixProviderTests
 {
     [Fact]
-    public async Task RegisterWorkflow_WhenAddDaprWorkflowIsFoundWithOptions()
+    public async Task RegisterWorkflow()
     {
-        var code = @"
-            using Dapr.Workflow;
-            using Microsoft.Extensions.DependencyInjection;
-            using System.Threading.Tasks;
+        const string code = """
+                                        using Dapr.Workflow;
+                                        using Microsoft.Extensions.DependencyInjection;
+                                        using System.Threading.Tasks;
+                            
+                                        public static class Program
+                                        {
+                                        public static void Main()
+                                        {
+                                            var services = new ServiceCollection();
+                            
+                                            services.AddDaprWorkflow(options =>
+                                            {
+                                            });
+                                        }
+                            
+                                        private static async Task ScheduleWorkflow(DaprWorkflowClient client)
+                                        {        
+                                            await client.ScheduleNewWorkflowAsync(nameof(OrderProcessingWorkflow), null, new OrderPayload());
+                                        }
+                                        }
+                            
+                                        class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
+                                        { 
+                                        public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
+                                        {
+                                            return Task.FromResult(new OrderResult("Order processed"));
+                                        }
+                                        }
+                            
+                                        record OrderPayload { }
+                                        record OrderResult(string message) { }
+                                        
+                            """;
 
-            public static class Program
-            {
-            public static void Main()
-            {
-                var services = new ServiceCollection();
+        const string expectedChangedCode = """
+                                  
+                                              using Dapr.Workflow;
+                                              using Microsoft.Extensions.DependencyInjection;
+                                              using System.Threading.Tasks;
+                                  
+                                              public static class Program
+                                              {
+                                              public static void Main()
+                                              {
+                                                  var services = new ServiceCollection();
+                                  
+                                                  services.AddDaprWorkflow(options =>
+                                                  {
+                                                      options.RegisterWorkflow<OrderProcessingWorkflow>();
+                                                  });
+                                              }
+                                  
+                                              private static async Task ScheduleWorkflow(DaprWorkflowClient client)
+                                              {        
+                                                  await client.ScheduleNewWorkflowAsync(nameof(OrderProcessingWorkflow), null, new OrderPayload());
+                                              }
+                                              }
+                                  
+                                              class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
+                                              { 
+                                              public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
+                                              {
+                                                  return Task.FromResult(new OrderResult("Order processed"));
+                                              }
+                                              }
+                                  
+                                              record OrderPayload { }
+                                              record OrderResult(string message) { }
+                                              
+                                  """;
 
-                services.AddDaprWorkflow(options =>
-                {
-                });
-            }
-
-            private static async Task ScheduleWorkflow(DaprWorkflowClient client)
-            {        
-                await client.ScheduleNewWorkflowAsync(nameof(OrderProcessingWorkflow), null, new OrderPayload());
-            }
-            }
-
-            class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
-            { 
-            public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
-            {
-                return Task.FromResult(new OrderResult(""Order processed""));
-            }
-            }
-
-            record OrderPayload { }
-            record OrderResult(string message) { }
-            ";
-
-        var expectedChangedCode = @"
-            using Dapr.Workflow;
-            using Microsoft.Extensions.DependencyInjection;
-            using System.Threading.Tasks;
-
-            public static class Program
-            {
-            public static void Main()
-            {
-                var services = new ServiceCollection();
-
-                services.AddDaprWorkflow(options =>
-                {
-                    options.RegisterWorkflow<OrderProcessingWorkflow>();
-                });
-            }
-
-            private static async Task ScheduleWorkflow(DaprWorkflowClient client)
-            {        
-                await client.ScheduleNewWorkflowAsync(nameof(OrderProcessingWorkflow), null, new OrderPayload());
-            }
-            }
-
-            class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
-            { 
-            public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
-            {
-                return Task.FromResult(new OrderResult(""Order processed""));
-            }
-            }
-
-            record OrderPayload { }
-            record OrderResult(string message) { }
-            ";
-
-        await VerifyCodeFix.RunTest<WorkflowRegistrationCodeFixProvider>(code, expectedChangedCode);
-    }
-
-    [Fact]
-    public async Task RegisterWorkflow_WhenAddDaprWorkflowIsFoundWitOptions()
-    {
-        var code = @"
-            using Dapr.Workflow;
-            using Microsoft.Extensions.DependencyInjection;
-            using System.Threading.Tasks;
-
-            public static class Program
-            {
-            public static void Main()
-            {
-                var services = new ServiceCollection();
-
-                services.AddDaprWorkflow(options =>
-                {
-                    options.RegisterWorkflow<AnotherWorkflow>();
-                });
-            }
-
-            private static async Task ScheduleWorkflow(DaprWorkflowClient client)
-            {        
-                await client.ScheduleNewWorkflowAsync(nameof(OrderProcessingWorkflow), null, new OrderPayload());
-            }
-            }
-
-            class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
-            { 
-            public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
-            {
-                return Task.FromResult(new OrderResult(""Order processed""));
-            }
-            }
-
-            class AnotherWorkflow : Workflow<OrderPayload, OrderResult>
-            { 
-            public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
-            {
-                return Task.FromResult(new OrderResult(""Order processed by another workflow""));
-            }
-            }
-
-            record OrderPayload { }
-            record OrderResult(string message) { }
-            ";
-
-        var expectedChangedCode = @"
-            using Dapr.Workflow;
-            using Microsoft.Extensions.DependencyInjection;
-            using System.Threading.Tasks;
-
-            public static class Program
-            {
-            public static void Main()
-            {
-                var services = new ServiceCollection();
-
-                services.AddDaprWorkflow(options =>
-                {
-                    options.RegisterWorkflow<AnotherWorkflow>();
-                    options.RegisterWorkflow<OrderProcessingWorkflow>();
-                });
-            }
-
-            private static async Task ScheduleWorkflow(DaprWorkflowClient client)
-            {        
-                await client.ScheduleNewWorkflowAsync(nameof(OrderProcessingWorkflow), null, new OrderPayload());
-            }
-            }
-
-            class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
-            { 
-            public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
-            {
-                return Task.FromResult(new OrderResult(""Order processed""));
-            }
-            }
-
-            class AnotherWorkflow : Workflow<OrderPayload, OrderResult>
-            { 
-            public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
-            {
-                return Task.FromResult(new OrderResult(""Order processed by another workflow""));
-            }
-            }
-
-            record OrderPayload { }
-            record OrderResult(string message) { }
-            ";
-
-        await VerifyCodeFix.RunTest<WorkflowRegistrationCodeFixProvider>(code, expectedChangedCode);
+        await VerifyCodeFix.RunTest<WorkflowRegistrationCodeFixProvider>(code, expectedChangedCode, typeof(object).Assembly.Location, Utilities.GetReferences(), Utilities.GetAnalyzers());
     }
 
     [Fact]
     public async Task RegisterWorkflow_WhenAddDaprWorkflowIsNotFound()
     {
-        var code = @"
-            using Dapr.Workflow;
-            using Microsoft.AspNetCore.Builder;
-            using System.Threading.Tasks;
+        const string code = """       
+                                        using Dapr.Workflow;
+                                        using Microsoft.AspNetCore.Builder;
+                                        using System.Threading.Tasks;
+                            
+                                        public static class Program
+                                        {
+                                        public static void Main()
+                                        {
+                                            var builder = WebApplication.CreateBuilder();
+                            
+                                            var app = builder.Build();
+                                        }
+                            
+                                        private static async Task ScheduleWorkflow(DaprWorkflowClient client)
+                                        {        
+                                            await client.ScheduleNewWorkflowAsync(nameof(OrderProcessingWorkflow), null, new OrderPayload());
+                                        }
+                                        }
+                            
+                                        class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
+                                        { 
+                                            public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
+                                            {
+                                                return Task.FromResult(new OrderResult("Order processed"));
+                                            }
+                                        }
+                            
+                                        record OrderPayload { }
+                                        record OrderResult(string message) { }
+                            """;
 
-            public static class Program
-            {
-            public static void Main()
-            {
-                var builder = WebApplication.CreateBuilder();
+        const string expectedChangedCode = """
+                                                       using Dapr.Workflow;
+                                                       using Microsoft.AspNetCore.Builder;
+                                                       using System.Threading.Tasks;
+                                           
+                                                       public static class Program
+                                                       {
+                                                       public static void Main()
+                                                       {
+                                                           var builder = WebApplication.CreateBuilder();
+                                           
+                                                           builder.Services.AddDaprWorkflow(options =>
+                                                           {
+                                                               options.RegisterWorkflow<OrderProcessingWorkflow>();
+                                                           });
+                                           
+                                                           var app = builder.Build();
+                                                       }
+                                           
+                                                       private static async Task ScheduleWorkflow(DaprWorkflowClient client)
+                                                       {        
+                                                           await client.ScheduleNewWorkflowAsync(nameof(OrderProcessingWorkflow), null, new OrderPayload());
+                                                       }
+                                                       }
+                                           
+                                                       class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
+                                                       { 
+                                                       public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
+                                                       {
+                                                           return Task.FromResult(new OrderResult("Order processed"));
+                                                       }
+                                                       }
+                                           
+                                                       record OrderPayload { }
+                                                       record OrderResult(string message) { }     
+                                           """;
 
-                var app = builder.Build();
-            }
-
-            private static async Task ScheduleWorkflow(DaprWorkflowClient client)
-            {        
-                await client.ScheduleNewWorkflowAsync(nameof(OrderProcessingWorkflow), null, new OrderPayload());
-            }
-            }
-
-            class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
-            { 
-                public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
-                {
-                    return Task.FromResult(new OrderResult(""Order processed""));
-                }
-            }
-
-            record OrderPayload { }
-            record OrderResult(string message) { }
-            ";
-
-        var expectedChangedCode = @"
-            using Dapr.Workflow;
-            using Microsoft.AspNetCore.Builder;
-            using System.Threading.Tasks;
-
-            public static class Program
-            {
-            public static void Main()
-            {
-                var builder = WebApplication.CreateBuilder();
-
-                builder.Services.AddDaprWorkflow(options =>
-                {
-                    options.RegisterWorkflow<OrderProcessingWorkflow>();
-                });
-
-                var app = builder.Build();
-            }
-
-            private static async Task ScheduleWorkflow(DaprWorkflowClient client)
-            {        
-                await client.ScheduleNewWorkflowAsync(nameof(OrderProcessingWorkflow), null, new OrderPayload());
-            }
-            }
-
-            class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
-            { 
-            public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
-            {
-                return Task.FromResult(new OrderResult(""Order processed""));
-            }
-            }
-
-            record OrderPayload { }
-            record OrderResult(string message) { }
-            ";
-
-        await VerifyCodeFix.RunTest<WorkflowRegistrationCodeFixProvider>(code, expectedChangedCode);
+        await VerifyCodeFix.RunTest<WorkflowRegistrationCodeFixProvider>(code, expectedChangedCode, typeof(object).Assembly.Location, Utilities.GetReferences(), Utilities.GetAnalyzers());
     }
 
     [Fact]
     public async Task RegisterWorkflow_WhenAddDaprWorkflowIsNotFound_TopLevelStatements()
     {
-        var code = @"            
-            using Dapr.Workflow;
-            using Microsoft.AspNetCore.Builder;
-            using Microsoft.Extensions.DependencyInjection;
-            using System.Threading.Tasks;
+        const string code = """           
+                                        using Dapr.Workflow;
+                                        using Microsoft.AspNetCore.Builder;
+                                        using Microsoft.Extensions.DependencyInjection;
+                                        using System.Threading.Tasks;
+                            
+                                        var builder = WebApplication.CreateBuilder();
+                                            
+                                        var app = builder.Build();
+                            
+                                        var workflowClient = app.Services.GetRequiredService<DaprWorkflowClient>();
+                                        await workflowClient.ScheduleNewWorkflowAsync(nameof(TestNamespace.OrderProcessingWorkflow), null, new OrderPayload());
+                            
+                                        namespace TestNamespace
+                                        {
+                                            class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
+                                            { 
+                                                public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
+                                                {
+                                                    return Task.FromResult(new OrderResult("Order processed"));
+                                                }
+                                            }
+                                        }
+                            
+                                        record OrderPayload { }
+                                        record OrderResult(string message) { }
+                            """;
 
-            var builder = WebApplication.CreateBuilder();
-                
-            var app = builder.Build();
+        const string expectedChangedCode = """           
+                                                       using Dapr.Workflow;
+                                                       using Microsoft.AspNetCore.Builder;
+                                                       using Microsoft.Extensions.DependencyInjection;
+                                                       using System.Threading.Tasks;
+                                           
+                                                       var builder = WebApplication.CreateBuilder();
+                                           
+                                                       builder.Services.AddDaprWorkflow(options =>
+                                                       {
+                                                           options.RegisterWorkflow<TestNamespace.OrderProcessingWorkflow>();
+                                                       });
+                                                           
+                                                       var app = builder.Build();
+                                           
+                                                       var workflowClient = app.Services.GetRequiredService<DaprWorkflowClient>();
+                                                       await workflowClient.ScheduleNewWorkflowAsync(nameof(TestNamespace.OrderProcessingWorkflow), null, new OrderPayload());
+                                           
+                                                       namespace TestNamespace
+                                                       {
+                                                           class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
+                                                           { 
+                                                               public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
+                                                               {
+                                                                   return Task.FromResult(new OrderResult("Order processed"));
+                                                               }
+                                                           }                
+                                                       }
+                                           
+                                                       record OrderPayload { }
+                                                       record OrderResult(string message) { }    
+                                           """;
 
-            var workflowClient = app.Services.GetRequiredService<DaprWorkflowClient>();
-            await workflowClient.ScheduleNewWorkflowAsync(nameof(TestNamespace.OrderProcessingWorkflow), null, new OrderPayload());
-
-            namespace TestNamespace
-            {
-                class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
-                { 
-                    public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
-                    {
-                        return Task.FromResult(new OrderResult(""Order processed""));
-                    }
-                }
-            }
-
-            record OrderPayload { }
-            record OrderResult(string message) { }
-            ";
-
-        var expectedChangedCode = @"            
-            using Dapr.Workflow;
-            using Microsoft.AspNetCore.Builder;
-            using Microsoft.Extensions.DependencyInjection;
-            using System.Threading.Tasks;
-
-            var builder = WebApplication.CreateBuilder();
-
-            builder.Services.AddDaprWorkflow(options =>
-            {
-                options.RegisterWorkflow<TestNamespace.OrderProcessingWorkflow>();
-            });
-                
-            var app = builder.Build();
-
-            var workflowClient = app.Services.GetRequiredService<DaprWorkflowClient>();
-            await workflowClient.ScheduleNewWorkflowAsync(nameof(TestNamespace.OrderProcessingWorkflow), null, new OrderPayload());
-
-            namespace TestNamespace
-            {
-                class OrderProcessingWorkflow : Workflow<OrderPayload, OrderResult>
-                { 
-                    public override Task<OrderResult> RunAsync(WorkflowContext context, OrderPayload order)
-                    {
-                        return Task.FromResult(new OrderResult(""Order processed""));
-                    }
-                }                
-            }
-
-            record OrderPayload { }
-            record OrderResult(string message) { }
-            ";
-
-        await VerifyCodeFix.RunTest<WorkflowRegistrationCodeFixProvider>(code, expectedChangedCode);
+        await VerifyCodeFix.RunTest<WorkflowRegistrationCodeFixProvider>(code, expectedChangedCode, typeof(object).Assembly.Location, Utilities.GetReferences(), Utilities.GetAnalyzers());
     }
 }

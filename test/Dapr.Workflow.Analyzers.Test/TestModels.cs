@@ -1,4 +1,4 @@
-﻿// ------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Copyright 2025 The Dapr Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,4 +14,4 @@
 namespace Dapr.Workflow.Analyzers.Test;
 
 internal record OrderPayload(string OrderId, string CustomerId);
-internal record class OrderResult(string result);
+internal record class OrderResult(string Result);

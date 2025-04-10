@@ -1,4 +1,4 @@
-﻿// ------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Copyright 2025 The Dapr Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,53 +17,33 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System.Collections.Immutable;
 using System.Reflection;
+using Dapr.Analyzers.Common;
+using Microsoft.Extensions.Hosting;
 
 namespace Dapr.Workflow.Analyzers.Test;
 
 internal static class Utilities
 {
-    public static async Task<(ImmutableArray<Diagnostic> diagnostics, Document document, Workspace workspace)> GetDiagnosticsAdvanced(string code)
-    {        
-        var workspace = new AdhocWorkspace();
 
-        // Create a new project with necessary references
-        var project = workspace.AddProject("TestProject", LanguageNames.CSharp)
-            .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddMetadataReference(MetadataReference.CreateFromFile(typeof(object).Assembly.Location))
-            .AddMetadataReferences(GetAllReferencesNeededForType(typeof(Workflow<,>)))
-            .AddMetadataReferences(GetAllReferencesNeededForType(typeof(WebApplication)));
+    internal static ImmutableArray<DiagnosticAnalyzer> GetAnalyzers() =>
+    [
+        new WorkflowRegistrationAnalyzer(),
+        new WorkflowActivityRegistrationAnalyzer()
+    ];
 
-        // Add the document to the project
-        var document = project.AddDocument("TestDocument.cs", code);
-
-        // Get the syntax tree and create a compilation
-        var syntaxTree = await document.GetSyntaxTreeAsync() ?? throw new InvalidOperationException("Syntax tree is null");
-        var compilation = CSharpCompilation.Create("TestCompilation")
-            .AddSyntaxTrees(syntaxTree)
-            .AddReferences(project.MetadataReferences);
-
-        var compilationWithAnalyzer = compilation.WithAnalyzers(
-                ImmutableArray.Create<DiagnosticAnalyzer>(
-                    new WorkflowRegistrationAnalyzer()));
-
-        // Get diagnostics from the compilation
-        var diagnostics = await compilationWithAnalyzer.GetAllDiagnosticsAsync();
-        return (diagnostics, document, workspace);
-    }
-
-    public static MetadataReference[] GetAllReferencesNeededForType(Type type)
+    internal static IReadOnlyList<MetadataReference> GetReferences()
     {
-        var files = GetAllAssemblyFilesNeededForType(type);
-
-        return files.Select(x => MetadataReference.CreateFromFile(x)).Cast<MetadataReference>().ToArray();
-    }
-
-    private static ImmutableArray<string> GetAllAssemblyFilesNeededForType(Type type)
-    {
-        return type.Assembly.GetReferencedAssemblies()
-            .Select(x => Assembly.Load(x.FullName))
-            .Append(type.Assembly)
-            .Select(x => x.Location)
-            .ToImmutableArray();
+        var metadataReferences = TestUtilities.GetAllReferencesNeededForType(typeof(WorkflowActivityRegistrationAnalyzer)).ToList();
+        metadataReferences.AddRange(TestUtilities.GetAllReferencesNeededForType(typeof(WorkflowRegistrationAnalyzer)));
+        metadataReferences.AddRange(TestUtilities.GetAllReferencesNeededForType(typeof(TimeSpan)));
+        metadataReferences.AddRange(TestUtilities.GetAllReferencesNeededForType(typeof(Workflow<,>)));
+        metadataReferences.AddRange(TestUtilities.GetAllReferencesNeededForType(typeof(WorkflowActivity<,>)));
+        metadataReferences.Add(MetadataReference.CreateFromFile(typeof(Task).Assembly.Location));
+        metadataReferences.Add(MetadataReference.CreateFromFile(typeof(WebApplication).Assembly.Location));
+        metadataReferences.Add(MetadataReference.CreateFromFile(typeof(DaprWorkflowClient).Assembly.Location));
+        metadataReferences.Add(MetadataReference.CreateFromFile(typeof(Microsoft.Extensions.DependencyInjection.ServiceCollection).Assembly.Location));
+        metadataReferences.Add(MetadataReference.CreateFromFile(typeof(IApplicationBuilder).Assembly.Location));
+        metadataReferences.Add(MetadataReference.CreateFromFile(typeof(IHost).Assembly.Location));
+        return metadataReferences;
     }
 }

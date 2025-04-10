@@ -2,7 +2,8 @@
 
   <PropertyGroup>    
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>    
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
@@ -10,7 +11,10 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" />    
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Hosting"/>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.extensibility.core"/>
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -25,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dapr.Workflow.Analyzers\Dapr.Workflow.Analyzers.csproj" />
     <ProjectReference Include="..\..\src\Dapr.Workflow\Dapr.Workflow.csproj" />
+    <ProjectReference Include="..\Dapr.Analyzers.Common\Dapr.Analyzers.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
