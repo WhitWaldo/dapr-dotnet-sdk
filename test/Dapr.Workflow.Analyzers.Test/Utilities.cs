@@ -13,10 +13,8 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System.Collections.Immutable;
-using System.Reflection;
 using Dapr.Analyzers.Common;
 using Microsoft.Extensions.Hosting;
 
