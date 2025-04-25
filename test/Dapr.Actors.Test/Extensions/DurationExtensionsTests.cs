@@ -40,7 +40,8 @@ public sealed class DurationExtensionsTests
     public void ValidatePrefixedPeriodParsing(string input, int expectedDays, int expectedHours, int expectedMinutes, int expectedSeconds, int expectedMilliseconds)
     {
         var result = input.FromPrefixedPeriod();
-
+        Assert.True(input.IsDurationExpression());
+        
         if (input is "@yearly" or "@monthly")
         {
             Assert.True(result.Days >= expectedDays);
@@ -52,31 +53,6 @@ public sealed class DurationExtensionsTests
         Assert.Equal(expectedMinutes, result.Minutes);
         Assert.Equal(expectedSeconds, result.Seconds);
         Assert.Equal(expectedMilliseconds, result.Milliseconds);
-    }
-
-    [Theory]
-    [InlineData("@yearly", true)]
-    [InlineData("@monthly", true)]
-    [InlineData("@weekly", true)]
-    [InlineData("@daily", true)]
-    [InlineData("@midnight", true)]
-    [InlineData("@hourly", true)]
-    [InlineData("@every 1h", true)]
-    [InlineData("@every 30m", true)]
-    [InlineData("@every 45s", true)]
-    [InlineData("@every 1.5h", true)]
-    [InlineData("@every 1h30m", true)]
-    [InlineData("@every 1h30m45s", true)]
-    [InlineData("@every 1h30m45.3s", true)]
-    [InlineData("@every 100ms", true)]
-    [InlineData("@every 1s500ms", true)]
-    [InlineData("@every 1m1s", true)]
-    [InlineData("@every 1.1m", true)]
-    [InlineData("@every 1.5h30m45s100ms", true)]
-    public void TestIsDurationExpression(string input, bool expectedResult)
-    {
-        var actualResult = input.IsDurationExpression();
-        Assert.Equal(expectedResult, actualResult);
     }
 
     [Fact]
