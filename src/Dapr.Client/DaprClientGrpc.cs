@@ -157,7 +157,7 @@ internal class DaprClientGrpc : DaprClient
             envelope.Data = content;
             envelope.DataContentType = dataContentType ?? Constants.ContentTypeApplicationJson;
         }
-
+        
         if (metadata != null)
         {
             foreach (var kvp in metadata)

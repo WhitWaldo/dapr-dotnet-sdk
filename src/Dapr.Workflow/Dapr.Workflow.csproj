@@ -9,11 +9,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DurableTask.Client.Grpc" />
-    <PackageReference Include="Microsoft.DurableTask.Worker.Grpc" />
+<!--    <PackageReference Include="Microsoft.DurableTask.Client.Grpc" />-->
+<!--    <PackageReference Include="Microsoft.DurableTask.Worker.Grpc" />-->
   </ItemGroup>
 
   <ItemGroup>
+      
+    <ProjectReference Include="..\..\..\dapr-projects\whitwaldo-durabletask\src\Worker\Grpc\Worker.Grpc.csproj" />
+      <ProjectReference Include="..\..\..\dapr-projects\whitwaldo-durabletask\src\Client\Grpc\Client.Grpc.csproj" />
+      
     <ProjectReference Include="..\Dapr.Client\Dapr.Client.csproj" />
     <ProjectReference Include="..\Dapr.Common\Dapr.Common.csproj" />
     <ProjectReference Include="..\Dapr.AspNetCore\Dapr.AspNetCore.csproj" />
