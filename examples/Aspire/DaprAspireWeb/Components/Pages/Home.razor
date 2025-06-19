@@ -1,0 +1,77 @@
+﻿@page "/"
+@using DaprAspireCommon
+@using DaprAspireWeb.Services
+@inject JobService JobSvc
+@implements IDisposable
+
+<PageTitle>Jobs</PageTitle>
+
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="sm:flex sm:items-center">
+        <div class="sm:flex-auto">
+            <h1 class="font-semibold text-[#dcdcdc] text-4xl">Jobs</h1>
+        </div>
+        <div class="sm:ml-16 sm:flex-none space-x-5 flex align-text-bottom h-full">
+            <div class="flex items-center">
+                <button @onclick="CreateJob" type="button" class="rounded-sm bg-amber-600 px-2 py-1 text-sm font-semibold text-black shadow-xs hover:bg-amber-800 focus-visible:outline-offset-2 focus-visible:outline-amber-900">Create New Job</button>
+            </div>
+        </div>
+    </div>
+    <div class="mt-8 flow-root">
+        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                <table class="min-w-full divide-y divide-gray-400">
+                    <thead>
+                    <tr>
+                        <th scope="col" class="py-3.5 pr-3 pl-4 text-left font-semibold text-white sm:pl-0">Job ID</th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var job in JobSvc.Jobs)
+                    {
+                        <tr class="text-white">
+                            <td>
+                                @job.Key
+                            </td>
+                            <td>
+                                @job.Value
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+Welcome to your new app.
+
+@code {
+    private Dictionary<Guid, JobStatus> Jobs { get; set; } = [];
+    
+    protected override void OnInitialized()
+    {
+        JobSvc.OnJobUpdated += JobSvcOnJobUpdated;
+    }
+
+    private void JobSvcOnJobUpdated(Job obj)
+    {
+        Jobs[obj.Id] = obj.Status;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        JobSvc.OnJobUpdated -= JobSvcOnJobUpdated;
+    }
+
+    /// <summary>
+    /// Schedules a new job when the button is clicked. 
+    /// </summary>
+    private async Task CreateJob()
+    {
+        await JobSvc.ScheduleJobAsync();
+    }
+}

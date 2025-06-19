@@ -1,0 +1,4 @@
+﻿@import "tailwindcss";
+
+@source "./../**/*.{razor,html}";
+@source not "../node_modules/**/*";

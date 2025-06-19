@@ -1,0 +1,21 @@
+{
+  "name": "DaprAspireWeb",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:css": "npx @tailwindcss/cli -i ./Styles/site.css -o ./wwwroot/site.css",
+    "build:prod": "npx @tailwindcss/cli -i ./Styles/site.css -o ./wwwroot/site.css --minify",
+    "watch-css": "npx @tailwindcss/cli -i ./Styles/site.css -o ./wwwroot/site.css --watch"
+  },
+  "keywords": [
+    "Dapr",
+    "PubSub",
+    "Actors"
+  ],
+  "author": "Dapr Authors",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "tailwindcss": "^4.1.10"
+  }
+}

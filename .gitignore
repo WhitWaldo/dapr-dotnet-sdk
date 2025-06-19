@@ -104,3 +104,4 @@ examples/**/tmp
 
 # MacOS
 **/.DS_Store
+/examples/Aspire/DaprAspireWeb/node_modules/*
