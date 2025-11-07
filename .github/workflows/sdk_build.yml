@@ -1,6 +1,6 @@
 name: build
 
-on: 
+on:
   push:
     branches:
       - master
@@ -9,9 +9,9 @@ on:
       - feature-*
     tags:
       - v*
-    
+  
   pull_request:
-    branches: 
+    branches:
       - master
       - release-*
       - dev-*
@@ -27,11 +27,21 @@ jobs:
       - uses: actions/checkout@v1
       - name: Parse release version
         run: python ./.github/scripts/get_release_version.py
-      - name: Setup .NET Core
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+          dotnet-quality: 'ga'
+      - name: Setup .NET 9
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 9.0.x
           dotnet-quality: 'ga'
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 10.0.x
+          dotnet-quality: 'preview'
       - name: Restore dependencies
         run: dotnet restore
       - name: Build
@@ -50,72 +60,80 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dotnet-version: ['8.0', '9.0']
+        dotnet-version: ['8.0', '9.0', '10.0']
         include:
-        - dotnet-version: '8.0'
-          display-name: '.NET 8.0'
-          framework: 'net8'
-          prefix: 'net8'
-          install-version: '8.0.x'
-        - dotnet-version: '9.0'
-          display-name: '.NET 9.0'
-          framework: 'net9'
-          prefix: 'net9'
-          install-version: '9.0.x'
+          - dotnet-version: '8.0'
+            display-name: '.NET 8.0'
+            framework: 'net8'
+            prefix: 'net8'
+            install-version: '8.0.x'
+          - dotnet-version: '9.0'
+            display-name: '.NET 9.0'
+            framework: 'net9'
+            prefix: 'net9'
+            install-version: '9.0.x'
+          - dotnet-version: '10.0'
+            display-name: '.NET 10.0'
+            framework: 'net10'
+            prefix: 'net10'
+            install-version: '10.0.x'
     steps:
-    - uses: actions/checkout@v1
-    - name: Parse release version
-      run: python ./.github/scripts/get_release_version.py
-    - name: Setup ${{ matrix.display-name }}
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: ${{ matrix.install-version }}
-        dotnet-quality: 'ga' # Prefer a GA release, but use the RC if not available
-    - name: Setup .NET 8 (required)
-      uses: actions/setup-dotnet@v3
-      if: ${{ matrix.install-version != '8.0.x' }}
-      with:
-        dotnet-version: '8.0.x'
-        dotnet-quality: 'ga'
-    - name: Setup .NET 9 (required)
-      uses: actions/setup-dotnet@v3
-      if: ${{ matrix.install-version != '9.0.x' }}
-      with:
-        dotnet-version: '9.0.x'
-        dotnet-quality: 'ga'
-    - name: Build
-      # disable deterministic builds, just for test run. Deterministic builds break coverage for some reason
-      run: dotnet build --configuration release /p:GITHUB_ACTIONS=false
-    - name: Test
-      id: tests
-      continue-on-error: true # proceed if tests fail to allow for the report generation in master or next step failure in PR
-      run: |
-        dotnet test \
-          --configuration release \
-          --framework ${{ matrix.framework }} \
-          --no-build \
-          --no-restore \
-          --filter FullyQualifiedName\!~Dapr.E2E.Test \
-          --logger "trx;LogFilePrefix=${{ matrix.prefix }}" \
-          --logger "GitHubActions;report-warnings=false" \
-          --results-directory "${{ github.workspace }}/TestResults" \
-          /p:CollectCoverage=true \
-          /p:CoverletOutputFormat=opencover \
-          /p:GITHUB_ACTIONS=false
-    - name: Check test failure in PR
-      if: github.event_name == 'pull_request' && steps.tests.outcome != 'success'
-      run: exit 1
-    - name: Upload test coverage
-      uses: codecov/codecov-action@v1
-      with:
-        flags: ${{ matrix.framework }}
-    - name: Parse Trx files
-      uses: NasAmin/trx-parser@v0.2.0
-      id: trx-parser
-      if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository # does not work on PRs from forks
-      with:
-        TRX_PATH: ${{ github.workspace }}/TestResults
-        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v1
+      - name: Parse release version
+        run: python ./.github/scripts/get_release_version.py
+      - name: Setup ${{ matrix.display-name }}
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.install-version }}
+          dotnet-quality: 'ga' # Prefer a GA release, but use the RC if not available
+      - name: Setup .NET 8 (required)
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+          dotnet-quality: 'ga'
+      - name: Setup .NET 9 (required)
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+          dotnet-quality: 'ga'
+      - name: Setup .NET 10 (required)
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+      - name: Build
+        # disable deterministic builds, just for test run. Deterministic builds break coverage for some reason
+        run: dotnet build --configuration release /p:GITHUB_ACTIONS=false
+      - name: Test
+        id: tests
+        continue-on-error: true # proceed if tests fail to allow for the report generation in master or next step failure in PR
+        run: |
+          dotnet test \
+            --configuration release \
+            --framework ${{ matrix.framework }} \
+            --no-build \
+            --no-restore \
+            --filter FullyQualifiedName\!~Dapr.E2E.Test \
+            --logger "trx;LogFilePrefix=${{ matrix.prefix }}" \
+            --logger "GitHubActions;report-warnings=false" \
+            --results-directory "${{ github.workspace }}/TestResults" \
+            /p:CollectCoverage=true \
+            /p:CoverletOutputFormat=opencover \
+            /p:GITHUB_ACTIONS=false
+      - name: Check test failure in PR
+        if: github.event_name == 'pull_request' && steps.tests.outcome != 'success'
+        run: exit 1
+      - name: Upload test coverage
+        uses: codecov/codecov-action@v1
+        with:
+          flags: ${{ matrix.framework }}
+      - name: Parse Trx files
+        uses: NasAmin/trx-parser@v0.2.0
+        id: trx-parser
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository # does not work on PRs from forks
+        with:
+          TRX_PATH: ${{ github.workspace }}/TestResults
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   integration-test:
     uses: ./.github/workflows/itests.yml
   discover:
@@ -143,6 +161,8 @@ jobs:
           echo "matrix=$files" >> $GITHUB_OUTPUT
   
   publish:
+    permissions:
+      id-token: write # Enable GitHub OIDC token issuance for this job
     name: Publish Packages
     needs: ['discover']
     if: |
@@ -159,10 +179,16 @@ jobs:
         with:
           name: packages
           path: packages
+      - name: NuGet logic (OIDC -> temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGETORG_DAPR_USER }}
       - name: Publish ${{ matrix.package }} to NuGet
         run: |
-          dotnet nuget push "${{ matrix.package }}" --skip-duplicate --api-key ${{ secrets.NUGETORG_DAPR_API_KEY }} --source https://api.nuget.org/v3/index.json
-          
+          dotnet nuget push "${{ matrix.package }}" --skip-duplicate --api-key ${{steps.login.outputs.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json  
+          # Old: dotnet nuget push "${{ matrix.package }}" --skip-duplicate --api-key ${{ secrets.NUGETORG_DAPR_API_KEY }} --source https://api.nuget.org/v3/index.json
+
 #      - name: List packages (for sanity check)
 #        run: ls -R
 #        working-directory: packages
