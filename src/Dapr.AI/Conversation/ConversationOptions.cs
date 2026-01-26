@@ -19,8 +19,8 @@ namespace Dapr.AI.Conversation;
 /// <summary>
 /// Options used to configure the conversation operation.
 /// </summary>
-/// <param name="ConversationComponentId">The ID of the conversation component to use.</param>
-public sealed record ConversationOptions(string ConversationComponentId)
+/// <param name="ConversationComponentName">The name of the conversation component to use.</param>
+public sealed record ConversationOptions(string ConversationComponentName)
 {
     /// <summary>
     /// The ID of an existing chat.
