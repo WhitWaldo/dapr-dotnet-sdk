@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace Dapr.Workflow.Versioning.Abstractions;
-
+namespace Dapr.Workflow.Versioning;
 
 /// <summary>
 /// Creates configured <see cref="IWorkflowVersionStrategy"/> instances based on the workflow
@@ -15,7 +14,7 @@ namespace Dapr.Workflow.Versioning.Abstractions;
 ///   <item>
 ///     <description>
 /// A specific workflow family that declared <see cref="WorkflowVersionAttribute.StrategyType"/>,
-/// optionally with <see cref="WorkflowVersionAttribute.OptionsName"/>; or
+/// optionally with WorkflowVersionAttribute.OptionsName; or
 ///     </description>
 ///   </item>
 ///   <item>
@@ -27,8 +26,7 @@ namespace Dapr.Workflow.Versioning.Abstractions;
 /// <para>
 /// Implementations typically construct the strategy via
 /// <see cref="ActivatorUtilities.CreateInstance(IServiceProvider,Type,object[])"/> so
-/// constructor injection works, then bind any named options, configuration, or external policy
-/// using <paramref name="canonicalName"/> and <paramref name="optionsName"/>.
+/// constructor injection works, then bind any named options, configuration, or external policy.
 /// </para>
 /// </remarks>
 public interface IWorkflowVersionStrategyFactory

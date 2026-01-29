@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace Dapr.Workflow.Versioning.Abstractions;
+namespace Dapr.Workflow.Versioning;
 
 /// <summary>
 /// Convenience extension methods that make it easy to set global versioning defaults and configure named strategy
@@ -67,7 +67,7 @@ public static class WorkflowVersioningSimpleConfigExtensions
         string? optionsName = null)
         where TSelector : class, IWorkflowVersionSelector
     {
-        if (services is null) throw new ArgumentNullException(nameof(services));
+        ArgumentNullException.ThrowIfNull(services);
 
         services.PostConfigure<WorkflowVersioningOptions>(o =>
         {
@@ -109,8 +109,8 @@ public static class WorkflowVersioningSimpleConfigExtensions
         Action<TOptions> configure)
         where TOptions : class
     {
-        if (services is null) throw new ArgumentNullException(nameof(services));
-        if (configure is null) throw new ArgumentNullException(nameof(configure));
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configure);
 
         services.AddOptions<TOptions>(name).Configure(configure);
         return services;

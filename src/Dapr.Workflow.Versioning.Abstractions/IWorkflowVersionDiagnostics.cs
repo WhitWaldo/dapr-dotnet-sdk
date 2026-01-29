@@ -1,4 +1,4 @@
-﻿namespace Dapr.Workflow.Versioning.Abstractions;
+﻿namespace Dapr.Workflow.Versioning;
 
 /// <summary>
 /// Provides shared, localized-friendly diagnostic titles and messages used by both the source generator and the

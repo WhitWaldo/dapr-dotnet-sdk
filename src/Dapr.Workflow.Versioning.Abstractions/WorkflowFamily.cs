@@ -1,4 +1,4 @@
-﻿namespace Dapr.Workflow.Versioning.Abstractions;
+﻿namespace Dapr.Workflow.Versioning;
 
 /// <summary>
 /// Represents all discovered versions of a workflow family that share the same canonical name.

@@ -1,4 +1,4 @@
-﻿namespace Dapr.Workflow.Versioning.Abstractions;
+﻿namespace Dapr.Workflow.Versioning;
 
 /// <summary>
 /// Identifies a single workflow version within a canonical family.

@@ -1,4 +1,4 @@
-﻿namespace Dapr.Workflow.Versioning.Abstractions;
+﻿namespace Dapr.Workflow.Versioning;
 
 /// <summary>
 /// Creates configured <see cref="IWorkflowVersionSelector"/> instances that apply selection
@@ -9,10 +9,6 @@
 /// The selector is separate from the strategy to allow policies that go beyond simple
 /// string comparison—such as excluding pre-release versions, honoring branch rules, or
 /// implementing canary selection.
-/// </para>
-/// <para>
-/// Implementations typically construct the selector via DI and then bind per-family policy
-/// using <paramref name="canonicalName"/> and <paramref name="optionsName"/>.
 /// </para>
 /// </remarks>
 public interface IWorkflowVersionSelectorFactory

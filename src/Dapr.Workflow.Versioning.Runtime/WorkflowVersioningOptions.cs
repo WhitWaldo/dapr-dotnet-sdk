@@ -1,4 +1,4 @@
-﻿namespace Dapr.Workflow.Versioning.Abstractions;
+﻿namespace Dapr.Workflow.Versioning;
 
 /// <summary>
 /// Provides application-wife configuration for workflow versioning behavior, including default for the versioning
