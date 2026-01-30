@@ -235,6 +235,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dapr.Workflow.Versioning.Ru
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dapr.Workflow.Versioning.Abstractions.Test", "test\Dapr.Workflow.Versioning.Abstractions.Test\Dapr.Workflow.Versioning.Abstractions.Test.csproj", "{EADCDF21-1A9C-4DB6-8756-302A58A634FC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dapr.Workflow.Versioning.Runtime.Test", "test\Dapr.Workflow.Versioning.Runtime.Test\Dapr.Workflow.Versioning.Runtime.Test.csproj", "{44559C6D-0872-4A4F-832D-D45CE2D6E18A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -621,6 +623,10 @@ Global
 		{EADCDF21-1A9C-4DB6-8756-302A58A634FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EADCDF21-1A9C-4DB6-8756-302A58A634FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EADCDF21-1A9C-4DB6-8756-302A58A634FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44559C6D-0872-4A4F-832D-D45CE2D6E18A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44559C6D-0872-4A4F-832D-D45CE2D6E18A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44559C6D-0872-4A4F-832D-D45CE2D6E18A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44559C6D-0872-4A4F-832D-D45CE2D6E18A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -735,6 +741,7 @@ Global
 		{0CB07804-34B4-4595-99E7-D4B4CFA95CCD} = {27C5D71D-0721-4221-9286-B94AB07B58CF}
 		{C51E6EB6-AE82-48AD-9C9E-9E05BB196648} = {27C5D71D-0721-4221-9286-B94AB07B58CF}
 		{EADCDF21-1A9C-4DB6-8756-302A58A634FC} = {0AF0FE8D-C234-4F04-8514-32206ACE01BD}
+		{44559C6D-0872-4A4F-832D-D45CE2D6E18A} = {0AF0FE8D-C234-4F04-8514-32206ACE01BD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {65220BF2-EAE1-4CB2-AA58-EBE80768CB40}

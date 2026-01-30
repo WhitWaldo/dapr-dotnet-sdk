@@ -29,13 +29,16 @@ public sealed class DefaultWorkflowVersionStrategyFactory : IWorkflowVersionStra
     {
         ArgumentNullException.ThrowIfNull(strategyType);
         ArgumentNullException.ThrowIfNull(services);
+        
+        if (!typeof(IWorkflowVersionStrategy).IsAssignableFrom(strategyType))
+            throw new InvalidOperationException(
+                $"Strategy type '{strategyType.FullName}' must implement '{typeof(IWorkflowVersionStrategy).FullName}'.");
 
         // Prefer DI/ActivatorUtilities so constructor injection works.
-        var instance = (IWorkflowVersionStrategy?)(
-            services.GetService(strategyType) ??
-            ActivatorUtilities.CreateInstance(services, strategyType));
+        var obj = services.GetService(strategyType) ??
+                       ActivatorUtilities.CreateInstance(services, strategyType);
 
-        if (instance is null)
+        if (obj is not IWorkflowVersionStrategy instance)
             throw new InvalidOperationException(
                 $"Could not construct strategy of type '{strategyType.FullName}'.");
 

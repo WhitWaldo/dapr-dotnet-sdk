@@ -72,5 +72,5 @@ public interface IWorkflowVersionDiagnostics
     /// <param name="canonicalName">The canonical name of the workflow family.</param>
     /// <param name="versions">The set of tied version strings.</param>
     /// <returns>A human-readable message string.</returns>
-    string AmbiguousLatestMessage(string canonicalName, IEnumerable<string> versions);
+    string AmbiguousLatestMessage(string canonicalName, IReadOnlyList<string>? versions);
 }

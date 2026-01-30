@@ -62,12 +62,13 @@ public sealed class DefaultWorkflowVersioningDiagnostics : IWorkflowVersionDiagn
     public string AmbiguousLatestTitle => "Ambiguous latest workflow version";
     
     /// <inheritdoc />
-    public string AmbiguousLatestMessage(string canonicalName, IEnumerable<string> versions)
+    public string AmbiguousLatestMessage(string canonicalName, IReadOnlyList<string>? versions)
     {
         if (string.IsNullOrWhiteSpace(canonicalName))
             canonicalName = "<unknown>";
 
-        var list = versions is null ? "<none>" : string.Join(", ", versions);
+        var hasAny = versions is not null && (versions as ICollection<string>)?.Count > 0 || (versions?.Any() ?? false);
+        var list = hasAny ? string.Join(", ", versions!) : "<none>";
         return $"Multiple versions for '{canonicalName}' are tied for latest: [{list}].";
     }
 }

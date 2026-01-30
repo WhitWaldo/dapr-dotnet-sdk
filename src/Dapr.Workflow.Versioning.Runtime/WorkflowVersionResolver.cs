@@ -71,7 +71,7 @@ public sealed class WorkflowVersionResolver(
                 .FirstOrDefault();
 
             diagnosticId = IWorkflowVersioningDiagnosticIds.AmbiguousLatest;
-            diagnosticMessage = _diag.AmbiguousLatestMessage(family.CanonicalName, tied?.Select(v => v.Version) ?? []);
+            diagnosticMessage = _diag.AmbiguousLatestMessage(family.CanonicalName, tied?.Select(v => v.Version).ToList() ?? []);
             return false;
         }
     }
