@@ -92,8 +92,6 @@
         </ItemGroup>
     </Target>
 
-
-
     <!-- Build the generator once (on the first TFM) and capture its real output path -->
     <Target Name="_BuildAndResolveGeneratorIfFirstTFM">
         <!-- gate so we don’t add the analyzer 3x -->
