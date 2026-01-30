@@ -1,48 +1,97 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.Build.NoTargets/3.7.0">
 
     <PropertyGroup>
         <IsPackable>true</IsPackable>
         <PackageId>Dapr.Workflow.Versioning</PackageId>
-        <DevelopmentDependency>false</DevelopmentDependency>
-        <!-- We don't ship our our assembly, but include child outputs instead -->
-        <IncludeBuildOutput>false</IncludeBuildOutput>
         <Description>Provides named versioning capability (registry + strategies + source generator) for Dapr .NET Workflows</Description>
+        
+        <!-- Build triggers packing -->
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
-        <IsRoslynComponent>true</IsRoslynComponent>
+        <!-- This project produces no binaries of its own -->
+        <IncludeBuildOutput>false</IncludeBuildOutput>
 
-        <RootNamespace>Dapr.Workflow.Versioning</RootNamespace>
+        <!-- We embed the children; do NOT emit NuGet dependency groups -->
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
         
-        <TargetsForTfmSpecificBuildOutput>
-            $(TargetsForTfmSpecificBuildOutput);
-            _IncludeChildLibrariesInPackage
-        </TargetsForTfmSpecificBuildOutput>
+        <!-- Avoid an empty .snupkg  -->
+        <IncludeSymbols>false</IncludeSymbols>
+
+        <!-- Hook to add files into the package just before pack collects them -->
+        <TargetsForPack>$(TargetsForPack);_AggregateChildrenIntoPackage</TargetsForPack>
     </PropertyGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Dapr.Workflow.Versioning.Abstractions\Dapr.Workflow.Versioning.Abstractions.csproj" />
-      <ProjectReference Include="..\Dapr.Workflow.Versioning.Generators\Dapr.Workflow.Versioning.Generators\Dapr.Workflow.Versioning.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-      <ProjectReference Include="..\Dapr.Workflow.Versioning.Runtime\Dapr.Workflow.Versioning.Runtime.csproj" />
-    </ItemGroup>
     
-    <Target Name="_IncludeChildLibrariesInPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
+    <ItemGroup>
+        <!-- Build these libraries; do not turn them into NuGet dependencies -->
+        <ProjectReference Include="..\Dapr.Workflow.Versioning.Abstractions\Dapr.Workflow.Versioning.Abstractions.csproj"
+                          PrivateAssets="all"
+                          ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\Dapr.Workflow.Versioning.Runtime\Dapr.Workflow.Versioning.Runtime.csproj"
+                          PrivateAssets="all"
+                          ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <Target Name="_AggregateChildrenIntoPackage">
+        <!-- 1) Build the child libs for all the TFMs they declare -->
+        <MSBuild Projects="@(ProjectReference)"
+                 Targets="Build"
+                 Properties="Configuration=$(Configuration)"
+                 BuildInParallel="true" />
+
+        <!-- 2) Ask for TargetPath(s) for all TFMs the child projects target -->
+        <MSBuild Projects="@(ProjectReference)"
+                 Targets="GetTargetPath"
+                 Properties="Configuration=$(Configuration)">
+            <Output TaskParameter="TargetOutputs" ItemName="_AllChildOutputs" />
+        </MSBuild>
+
         <ItemGroup>
-            <!-- Take only ProjectReference outputs (exclude package refs, etc.) -->
-            <_ProjectRefOutputs Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget','ProjectReference'))" />
+            <!-- 3) Keep only DLLs, and compute the TFM from the parent folder name -->
+            <_ChildDll Include="@(_AllChildOutputs)"
+                       Condition="'%(_AllChildOutputs.Extension)' == '.dll'">
+                <!-- Folder containing the dll -->
+                <_ChildDir>$([System.IO.Path]::GetDirectoryName('%(_AllChildOutputs.Identity)'))</_ChildDir>
+                <!-- Name of that folder (expected to be the TFM, e.g., net8.0) -->
+                <_TFM>$([System.IO.Path]::GetFileName('%(_ChildDll._ChildDir)'))</_TFM>
+                <_FileName>%(_AllChildOutputs.Filename)%(_AllChildOutputs.Extension)</_FileName>
+            </_ChildDll>
 
-            <!-- Optional filter: only include assemblies; comment out if you also want .xml/.pdb -->
-            <_ProjectRefOutputs Include="%(_ProjectRefOutputs.Identity)"
-                                Condition="'%(_ProjectRefOutputs.Extension)' == '.dll'" />
+            <!-- 4) Explicitly place dlls into lib/<tfm>/ -->
+            <PackageFile Include="@(_ChildDll)">
+                <PackagePath>lib/%(_ChildDll._TFM)/%(_ChildDll._FileName)</PackagePath>
+            </PackageFile>
 
-            <!-- Add to package: each file goes under lib/<TFM>/ -->
-            <BuildOutputInPackage Include="@(_ProjectRefOutputs)"
-                                  TargetPath="lib/$(TargetFramework)/" />
+            <!-- 5) (Optional) XML docs and PDBs, if present -->
+            <_ChildXml Include="%(_ChildDll.RootDir)%(_ChildDll.Directory)%(_ChildDll.Filename).xml"
+                       Condition="Exists('%(_ChildDll.RootDir)%(_ChildDll.Directory)%(_ChildDll.Filename).xml')">
+                <_TFM>%(_ChildDll._TFM)</_TFM>
+                <_FileName>%(_ChildDll.Filename).xml</_FileName>
+            </_ChildXml>
+            <PackageFile Include="@(_ChildXml)">
+                <PackagePath>lib/%(_ChildXml._TFM)/%(_ChildXml._FileName)</PackagePath>
+            </PackageFile>
+
+            <_ChildPdb Include="%(_ChildDll.RootDir)%(_ChildDll.Directory)%(_ChildDll.Filename).pdb"
+                       Condition="Exists('%(_ChildDll.RootDir)%(_ChildDll.Directory)%(_ChildDll.Filename).pdb')">
+                <_TFM>%(_ChildDll._TFM)</_TFM>
+                <_FileName>%(_ChildDll.Filename).pdb</_FileName>
+            </_ChildPdb>
+            <PackageFile Include="@(_ChildXml);@(_ChildPdb)">
+                <PackagePath>lib/%(_ChildXml._TFM)/%(_ChildXml._FileName)</PackagePath>
+            </PackageFile>
+
+            <!-- 6) Add the source generator ONCE (no TFM condition needed) -->
+            <PackageFile Include="..\Dapr.Workflow.Versioning.Generators\Dapr.Workflow.Versioning.Generators\bin\$(Configuration)\netstandard2.0\Dapr.Workflow.Versioning.Generators.dll">
+                <PackagePath>analyzers/dotnet/cs/Dapr.Workflow.Versioning.Generators.dll</PackagePath>
+            </PackageFile>
         </ItemGroup>
+
+        <!-- Helpful log so you can confirm -->
+        <Message Importance="high"
+                 Text="[Aggregate] Packing: @(_ChildDll->'%(Identity) -> lib/%(_ChildDll._TFM)/%(_ChildDll._FileName)')" />
     </Target>
 
     <ItemGroup>
-      <Folder Include="Properties\" />
+        <Folder Include="Properties\" />
     </ItemGroup>
-
-
 </Project>
