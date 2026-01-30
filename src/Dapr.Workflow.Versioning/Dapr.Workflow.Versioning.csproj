@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <PackageId>Dapr.Workflow.Versioning</PackageId>
+        <DevelopmentDependency>false</DevelopmentDependency>
+        <!-- We don't ship our our assembly, but include child outputs instead -->
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <Description>Provides named versioning capability (registry + strategies + source generator) for Dapr .NET Workflows</Description>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+
+        <IsRoslynComponent>true</IsRoslynComponent>
+
+        <RootNamespace>Dapr.Workflow.Versioning</RootNamespace>
+        
+        <TargetsForTfmSpecificBuildOutput>
+            $(TargetsForTfmSpecificBuildOutput);
+            _IncludeChildLibrariesInPackage
+        </TargetsForTfmSpecificBuildOutput>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Dapr.Workflow.Versioning.Abstractions\Dapr.Workflow.Versioning.Abstractions.csproj" />
+      <ProjectReference Include="..\Dapr.Workflow.Versioning.Generators\Dapr.Workflow.Versioning.Generators\Dapr.Workflow.Versioning.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+      <ProjectReference Include="..\Dapr.Workflow.Versioning.Runtime\Dapr.Workflow.Versioning.Runtime.csproj" />
+    </ItemGroup>
+    
+    <Target Name="_IncludeChildLibrariesInPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
+        <ItemGroup>
+            <!-- Take only ProjectReference outputs (exclude package refs, etc.) -->
+            <_ProjectRefOutputs Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget','ProjectReference'))" />
+
+            <!-- Optional filter: only include assemblies; comment out if you also want .xml/.pdb -->
+            <_ProjectRefOutputs Include="%(_ProjectRefOutputs.Identity)"
+                                Condition="'%(_ProjectRefOutputs.Extension)' == '.dll'" />
+
+            <!-- Add to package: each file goes under lib/<TFM>/ -->
+            <BuildOutputInPackage Include="@(_ProjectRefOutputs)"
+                                  TargetPath="lib/$(TargetFramework)/" />
+        </ItemGroup>
+    </Target>
+
+    <ItemGroup>
+      <Folder Include="Properties\" />
+    </ItemGroup>
+
+
+</Project>
