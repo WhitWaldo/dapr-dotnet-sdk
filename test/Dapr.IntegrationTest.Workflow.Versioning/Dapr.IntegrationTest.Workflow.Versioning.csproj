@@ -19,9 +19,14 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\src\Dapr.Testcontainers\Dapr.Testcontainers.csproj" />
+      <ProjectReference Include="..\..\src\Dapr.Workflow.Abstractions\Dapr.Workflow.Abstractions.csproj" />
+      <ProjectReference Include="..\..\src\Dapr.Workflow.Analyzers\Dapr.Workflow.Analyzers.csproj" />
+      <ProjectReference Include="..\..\src\Dapr.Workflow.Grpc\Dapr.Workflow.Grpc.csproj" />
       <ProjectReference Include="..\..\src\Dapr.Workflow.Versioning.Abstractions\Dapr.Workflow.Versioning.Abstractions.csproj" />
       <ProjectReference Include="..\..\src\Dapr.Workflow.Versioning.Generators\Dapr.Workflow.Versioning.Generators\Dapr.Workflow.Versioning.Generators.csproj" />
       <ProjectReference Include="..\..\src\Dapr.Workflow.Versioning.Runtime\Dapr.Workflow.Versioning.Runtime.csproj" />
+      <ProjectReference Include="..\..\src\Dapr.Workflow\Dapr.Workflow.csproj" />
     </ItemGroup>
 
 </Project>

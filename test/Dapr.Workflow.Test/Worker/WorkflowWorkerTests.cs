@@ -517,7 +517,8 @@ public class WorkflowWorkerTests
         var response = await InvokeHandleOrchestratorResponseAsync(worker, request);
 
         Assert.Equal("i", response.InstanceId);
-        Assert.Empty(response.Actions);
+        var action = Assert.Single(response.Actions);
+        Assert.NotNull(action.OrchestratorVersionNotAvailable);
         Assert.Null(response.CustomStatus);
     }
 
@@ -551,8 +552,145 @@ public class WorkflowWorkerTests
         var response = await InvokeHandleOrchestratorResponseAsync(worker, request);
 
         Assert.Equal("i", response.InstanceId);
-        Assert.Empty(response.Actions);
+        var action = Assert.Single(response.Actions);
+        Assert.NotNull(action.OrchestratorVersionNotAvailable);
         Assert.Null(response.CustomStatus);
+    }
+
+    [Fact]
+    public async Task HandleOrchestratorResponseAsync_ShouldRouteToLatestAlias_WhenCanonicalNameRequested()
+    {
+        var sp = new ServiceCollection().BuildServiceProvider();
+        var serializer = new JsonWorkflowSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var options = new WorkflowRuntimeOptions();
+
+        var factory = new StubWorkflowsFactory();
+        factory.AddWorkflow("MyWorkflowV1", new InlineWorkflow(
+            inputType: typeof(int),
+            run: (_, _) => Task.FromResult<object?>("v1")));
+        factory.AddWorkflow("MyWorkflowV2", new InlineWorkflow(
+            inputType: typeof(int),
+            run: (_, _) => Task.FromResult<object?>("v2")));
+        factory.AddWorkflow("MyWorkflow", factory.GetWorkflow("MyWorkflowV2"));
+
+        var worker = new WorkflowWorker(
+            CreateGrpcClientMock().Object,
+            factory,
+            NullLoggerFactory.Instance,
+            serializer,
+            sp,
+            options);
+
+        var request = new OrchestratorRequest
+        {
+            InstanceId = "i",
+            PastEvents =
+            {
+                new HistoryEvent
+                {
+                    ExecutionStarted = new ExecutionStartedEvent { Name = "MyWorkflow", Input = "1" }
+                }
+            }
+        };
+
+        var response = await InvokeHandleOrchestratorResponseAsync(worker, request);
+
+        var complete = response.Actions.Single(a => a.CompleteOrchestration != null).CompleteOrchestration!;
+        Assert.Equal(OrchestrationStatus.Completed, complete.OrchestrationStatus);
+        Assert.Equal("\"v2\"", complete.Result);
+    }
+
+    [Fact]
+    public async Task HandleOrchestratorResponseAsync_ShouldUseRequestedVersionName_WhenProvided()
+    {
+        var sp = new ServiceCollection().BuildServiceProvider();
+        var serializer = new JsonWorkflowSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var options = new WorkflowRuntimeOptions();
+
+        var factory = new StubWorkflowsFactory();
+        factory.AddWorkflow("MyWorkflowV2", new InlineWorkflow(
+            inputType: typeof(int),
+            run: (_, _) => Task.FromResult<object?>("v2")));
+
+        var worker = new WorkflowWorker(
+            CreateGrpcClientMock().Object,
+            factory,
+            NullLoggerFactory.Instance,
+            serializer,
+            sp,
+            options);
+
+        var request = new OrchestratorRequest
+        {
+            InstanceId = "i",
+            PastEvents =
+            {
+                new HistoryEvent
+                {
+                    OrchestratorStarted = new OrchestratorStartedEvent
+                    {
+                        Version = new OrchestrationVersion { Name = "MyWorkflowV2" }
+                    },
+                    Timestamp = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.UtcNow)
+                },
+                new HistoryEvent
+                {
+                    ExecutionStarted = new ExecutionStartedEvent { Name = "MyWorkflow", Version = "MyWorkflowV2", Input = "1" }
+                }
+            }
+        };
+
+        var response = await InvokeHandleOrchestratorResponseAsync(worker, request);
+
+        var complete = response.Actions.Single(a => a.CompleteOrchestration != null).CompleteOrchestration!;
+        Assert.Equal(OrchestrationStatus.Completed, complete.OrchestrationStatus);
+        Assert.Equal("\"v2\"", complete.Result);
+    }
+
+    [Fact]
+    public async Task HandleOrchestratorResponseAsync_ShouldReturnVersionNotAvailable_WhenRequestedVersionMissing()
+    {
+        var sp = new ServiceCollection().BuildServiceProvider();
+        var serializer = new JsonWorkflowSerializer(new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var options = new WorkflowRuntimeOptions();
+
+        var factory = new StubWorkflowsFactory();
+        factory.AddWorkflow("MyWorkflowV1", new InlineWorkflow(
+            inputType: typeof(int),
+            run: (_, _) => Task.FromResult<object?>("v1")));
+
+        var worker = new WorkflowWorker(
+            CreateGrpcClientMock().Object,
+            factory,
+            NullLoggerFactory.Instance,
+            serializer,
+            sp,
+            options);
+
+        var request = new OrchestratorRequest
+        {
+            InstanceId = "i",
+            PastEvents =
+            {
+                new HistoryEvent
+                {
+                    OrchestratorStarted = new OrchestratorStartedEvent
+                    {
+                        Version = new OrchestrationVersion { Name = "MyWorkflowV9" }
+                    },
+                    Timestamp = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.UtcNow)
+                },
+                new HistoryEvent
+                {
+                    ExecutionStarted = new ExecutionStartedEvent { Name = "MyWorkflow", Version = "MyWorkflowV9", Input = "1" }
+                }
+            }
+        };
+
+        var response = await InvokeHandleOrchestratorResponseAsync(worker, request);
+
+        var action = Assert.Single(response.Actions);
+        Assert.NotNull(action.OrchestratorVersionNotAvailable);
     }
 
     [Fact]
@@ -979,6 +1117,7 @@ public class WorkflowWorkerTests
         private readonly Dictionary<string, IWorkflowActivity> _activities = new(StringComparer.OrdinalIgnoreCase);
 
         public void AddWorkflow(string name, IWorkflow wf) => _workflows[name] = wf;
+        public IWorkflow GetWorkflow(string name) => _workflows[name];
         public void AddActivity(string name, IWorkflowActivity act) => _activities[name] = act;
 
         public void RegisterWorkflow<TWorkflow>(string? name = null) where TWorkflow : class, IWorkflow => throw new NotSupportedException();

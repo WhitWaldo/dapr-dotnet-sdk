@@ -171,6 +171,8 @@ public static class WorkflowServiceCollectionExtensions
             var logger = loggerFactory.CreateLogger<WorkflowsFactory>();
             var factory = new WorkflowsFactory(logger);
 
+            WorkflowVersioningIntegration.TryRegisterGeneratedWorkflows(options, sp);
+
             // Apply all registrations from options
             options.ApplyRegistrations(factory);
 

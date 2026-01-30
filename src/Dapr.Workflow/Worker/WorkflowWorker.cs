@@ -80,7 +80,8 @@ internal sealed class WorkflowWorker(TaskHubSidecarService.TaskHubSidecarService
             var allPastEvents = request.PastEvents.ToList();
 
             // Extract the following values from the ExecutionStartedEvent in the history
-            string? workflowName = null;
+            string? workflowName = null; // Contains the intended name of the workflow to execute
+            string? requestedVersionName = null;
             string? serializedInput = null;
             string? appId = null;
 
@@ -107,6 +108,10 @@ internal sealed class WorkflowWorker(TaskHubSidecarService.TaskHubSidecarService
                 if (e.ExecutionStarted != null)
                 {
                     workflowName = e.ExecutionStarted.Name;
+                    if (string.IsNullOrEmpty(requestedVersionName) && !string.IsNullOrEmpty(e.ExecutionStarted.Version))
+                    {
+                        requestedVersionName = e.ExecutionStarted.Version;
+                    }
                     serializedInput = e.ExecutionStarted.Input;
                     
                     // Try pulling the app ID out of the target first, then the source if not available
@@ -122,18 +127,51 @@ internal sealed class WorkflowWorker(TaskHubSidecarService.TaskHubSidecarService
                 }
             }
             
-            if (string.IsNullOrEmpty(workflowName))
+            foreach (var e in allPastEvents.Concat(request.NewEvents))
+            {
+                if (e.OrchestratorStarted?.Version?.Name is { Length: > 0 } versionName)
+                {
+                    requestedVersionName = versionName;
+                    break;
+                }
+            }
+
+            var workflowNameToRun = requestedVersionName ?? workflowName;
+
+            if (string.IsNullOrEmpty(workflowNameToRun))
             {
                 _logger.LogWorkerWorkflowHandleOrchestratorRequestNotInRegistry("<unknown>");
-                return new OrchestratorResponse { InstanceId = request.InstanceId };
+                return new OrchestratorResponse
+                {
+                    InstanceId = request.InstanceId,
+                    Actions =
+                    {
+                        new OrchestratorAction
+                        {
+                            Id = 0,
+                            OrchestratorVersionNotAvailable = new OrchestratorVersionNotAvailableAction()
+                        }
+                    }
+                };
             }
 
             // Try to get the workflow from the factory
-            var workflowIdentifier = new TaskIdentifier(workflowName);
+            var workflowIdentifier = new TaskIdentifier(workflowNameToRun);
             if (!_workflowsFactory.TryCreateWorkflow(workflowIdentifier, scope.ServiceProvider, out var workflow))
             {
-                _logger.LogWorkerWorkflowHandleOrchestratorRequestNotInRegistry(workflowName);
-                return new OrchestratorResponse { InstanceId = request.InstanceId };
+                _logger.LogWorkerWorkflowHandleOrchestratorRequestNotInRegistry(workflowNameToRun);
+                return new OrchestratorResponse
+                {
+                    InstanceId = request.InstanceId,
+                    Actions =
+                    {
+                        new OrchestratorAction
+                        {
+                            Id = 0,
+                            OrchestratorVersionNotAvailable = new OrchestratorVersionNotAvailableAction()
+                        }
+                    }
+                };
             }
 
             var currentUtcDateTime = allPastEvents.Count > 0 && allPastEvents[0].Timestamp != null
@@ -141,7 +179,7 @@ internal sealed class WorkflowWorker(TaskHubSidecarService.TaskHubSidecarService
                 : DateTime.UtcNow;
 
             // Initialize the context with the FULL history
-            var context = new WorkflowOrchestrationContext(workflowName, request.InstanceId, currentUtcDateTime, _serializer, loggerFactory, appId);
+            var context = new WorkflowOrchestrationContext(workflowName!, request.InstanceId, currentUtcDateTime, _serializer, loggerFactory, appId);
 
             // Deserialize the input
             object? input = string.IsNullOrEmpty(serializedInput)
@@ -174,7 +212,7 @@ internal sealed class WorkflowWorker(TaskHubSidecarService.TaskHubSidecarService
             // If the workflow issued ContinueAsNew, it already queued a completion action; just return it.
             if (context.PendingActions.Any(a => a.CompleteOrchestration?.OrchestrationStatus == OrchestrationStatus.ContinuedAsNew))
             {
-                _logger.LogWorkerWorkflowHandleOrchestratorRequestCompleted(workflowName, request.InstanceId);
+                _logger.LogWorkerWorkflowHandleOrchestratorRequestCompleted(workflowNameToRun, request.InstanceId);
                 return response;
             }
 
@@ -223,7 +261,7 @@ internal sealed class WorkflowWorker(TaskHubSidecarService.TaskHubSidecarService
                 });
             }
 
-            _logger.LogWorkerWorkflowHandleOrchestratorRequestCompleted(workflowName, request.InstanceId);
+            _logger.LogWorkerWorkflowHandleOrchestratorRequestCompleted(workflowNameToRun, request.InstanceId);
             return response;
         }
         catch (Exception ex)
